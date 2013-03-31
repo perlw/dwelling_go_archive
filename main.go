@@ -53,21 +53,26 @@ func main() {
 	vertexBuffer := makeBuffer(gl.ARRAY_BUFFER, gl.Pointer(&vertexData[0]), sizeFloat*len(vertexData))
 	elementBuffer := makeBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.Pointer(&elementData[0]), sizeUint*len(elementData))
 
-	fmt.Println(vertexBuffer)
 	fmt.Println(elementBuffer)
 
 	program := readShaders()
-	fmt.Println(program)
+
+	position := gl.GLString("position")
+	defer gl.GLStringFree(position)
+	vertexLoc := gl.GetAttribLocation(program, position)
+
+	var vao gl.Uint
+	gl.GenVertexArrays(1, &vao)
+	gl.BindVertexArray(vao)
 
 	gl.ClearColor(0.5, 0.5, 1.0, 1.0)
 	for glfw.WindowParam(glfw.Opened) == 1 {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		gl.UseProgram(program)
-
 		gl.BindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
-		gl.VertexAttribPointer(0, 2, gl.FLOAT, gl.FALSE, gl.Sizei(sizeFloat*2), nil)
-		gl.EnableVertexAttribArray(0)
+		gl.EnableVertexAttribArray(gl.Uint(vertexLoc))
+		gl.VertexAttribPointer(gl.Uint(vertexLoc), 2, gl.FLOAT, gl.FALSE, gl.Sizei(sizeFloat*2), nil)
 		gl.DrawElements(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_SHORT, nil)
 
 		glfw.SwapBuffers()
@@ -125,6 +130,8 @@ func readShaders() gl.Uint {
 
 	gl.LinkProgram(program)
 
+	printProgramLog(program)
+
 	return program
 }
 
@@ -135,4 +142,13 @@ func printShaderLog(shader gl.Uint) {
 	defer gl.GLStringFree(glString)
 	gl.GetShaderInfoLog(shader, gl.Sizei(length), nil, glString)
 	fmt.Println("shader log: ", gl.GoString(glString))
+}
+
+func printProgramLog(program gl.Uint) {
+	var length gl.Int
+	gl.GetProgramiv(program, gl.INFO_LOG_LENGTH, &length)
+	glString := gl.GLStringAlloc(gl.Sizei(length))
+	defer gl.GLStringFree(glString)
+	gl.GetProgramInfoLog(program, gl.Sizei(length), nil, glString)
+	fmt.Println("program log: ", gl.GoString(glString))
 }
