@@ -1,7 +1,12 @@
 #version 330
 
-in vec3 position;
+layout(location = 0) in vec4 vert;
+
+uniform mat4 view;
+uniform mat4 proj;
+uniform mat4 model;
+mat4 pvm = view * proj;
 
 void main() {
-	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+	gl_Position = view * proj * (vert * model);
 }

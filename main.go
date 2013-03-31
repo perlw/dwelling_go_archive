@@ -5,8 +5,8 @@ import (
 	gl "github.com/chsc/gogl/gl33"
 	"github.com/jteeuwen/glfw"
 	"io/ioutil"
+	"math"
 	"runtime"
-	"unsafe"
 )
 
 func main() {
@@ -36,44 +36,68 @@ func main() {
 	}
 
 	gl.Enable(gl.DEPTH_TEST)
-
 	gl.ClearColor(0.5, 0.5, 0.5, 1.0)
 	gl.ClearDepth(1)
 	gl.DepthFunc(gl.LEQUAL)
+	gl.Viewport(0, 0, 640, 480)
 
-	sizeFloat := int(unsafe.Sizeof([1]float32{}))
-	sizeUint := int(unsafe.Sizeof([1]uint{}))
-	vertexData := []float32{
-		-1.0, -1.0,
-		1.0, -1.0,
-		-1.0, 1.0,
-		1.0, 1.0,
-	}
-	elementData := []uint{0, 1, 2, 3}
-	vertexBuffer := makeBuffer(gl.ARRAY_BUFFER, gl.Pointer(&vertexData[0]), sizeFloat*len(vertexData))
-	elementBuffer := makeBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.Pointer(&elementData[0]), sizeUint*len(elementData))
-
-	fmt.Println(elementBuffer)
-
-	program := readShaders()
-
-	position := gl.GLString("position")
-	defer gl.GLStringFree(position)
-	vertexLoc := gl.GetAttribLocation(program, position)
+	vMatrix := viewMatrix()
+	projMatrix := perspectiveMatrix(53.13, 640/480, 0.1, 1000.0)
+	modelMatrix := translationMatrix(-5.0, 0.0, -5.0)
+	fmt.Println(projMatrix)
+	fmt.Println(modelMatrix)
 
 	var vao gl.Uint
 	gl.GenVertexArrays(1, &vao)
 	gl.BindVertexArray(vao)
 
+	//sizeFloat := int(unsafe.Sizeof([1]float32{}))
+	vertexData := []float32{
+		-0.5, -0.5, 0.0,
+		0.5, -0.5, 0.0,
+		0.0, 0.5, 0.0,
+	}
+	vertexBuffer := makeBuffer(gl.ARRAY_BUFFER, gl.Pointer(&vertexData[0]), 4*len(vertexData))
+
+	program := readShaders()
+
+	gl.UseProgram(program)
+
+	view := gl.GLString("view")
+	defer gl.GLStringFree(view)
+	viewId := gl.GetUniformLocation(program, view)
+	proj := gl.GLString("proj")
+	defer gl.GLStringFree(proj)
+	projId := gl.GetUniformLocation(program, proj)
+	model := gl.GLString("model")
+	defer gl.GLStringFree(model)
+	modelId := gl.GetUniformLocation(program, model)
+
+	xpos := 0.0
 	gl.ClearColor(0.5, 0.5, 1.0, 1.0)
 	for glfw.WindowParam(glfw.Opened) == 1 {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
+		xpos += 0.0005
+		if xpos > math.Pi*2 {
+			xpos = 0.0
+		}
+		modelMatrix = translationMatrix(gl.Float(math.Sin(xpos)), 0.0, -5.0)
+
 		gl.UseProgram(program)
+		gl.UniformMatrix4fv(viewId, 1, gl.FALSE, &vMatrix[0])
+		gl.UniformMatrix4fv(projId, 1, gl.FALSE, &projMatrix[0])
+		gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &modelMatrix[0])
+
 		gl.BindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
-		gl.EnableVertexAttribArray(gl.Uint(vertexLoc))
-		gl.VertexAttribPointer(gl.Uint(vertexLoc), 2, gl.FLOAT, gl.FALSE, gl.Sizei(sizeFloat*2), nil)
-		gl.DrawElements(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_SHORT, nil)
+		gl.EnableVertexAttribArray(0)
+		gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
+		gl.DrawArrays(gl.TRIANGLES, 0, 3)
+
+		if err := gl.GetError(); err != 0 {
+			fmt.Printf("Err: %d\n", err)
+			break
+		}
 
 		glfw.SwapBuffers()
 	}
@@ -124,7 +148,7 @@ func readShaders() gl.Uint {
 	gl.AttachShader(program, fragmentObj)
 
 	// Attribs
-	fragmentOut := gl.GLString("frag")
+	fragmentOut := gl.GLString("outputF")
 	defer gl.GLStringFree(fragmentOut)
 	gl.BindFragDataLocation(program, 0, fragmentOut)
 
@@ -152,3 +176,47 @@ func printProgramLog(program gl.Uint) {
 	gl.GetProgramInfoLog(program, gl.Sizei(length), nil, glString)
 	fmt.Println("program log: ", gl.GoString(glString))
 }
+
+func identityMatrix() [16]gl.Float {
+	return [16]gl.Float{
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1,
+	}
+}
+
+func viewMatrix() [16]gl.Float {
+	return [16]gl.Float{
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1,
+	}
+}
+
+func perspectiveMatrix(fov, ratio, nearp, farp float64) [16]gl.Float {
+	f := 1.0 / math.Tan(fov*(math.Pi/360.0))
+
+	matrix := identityMatrix()
+	matrix[0] = gl.Float(f / ratio)
+	matrix[5] = gl.Float(f)
+	matrix[10] = gl.Float((farp + nearp) / (nearp - farp))
+	matrix[14] = gl.Float((2.0 * farp * nearp) / (nearp - farp))
+	matrix[11] = -1.0
+
+	return matrix
+}
+
+func translationMatrix(x, y, z gl.Float) [16]gl.Float {
+	matrix := identityMatrix()
+	matrix[3] = x
+	matrix[7] = y
+	matrix[11] = z
+	return matrix
+}
+
+/*func multMatrix(a, b gl.Float) [16]gl.Float {
+	matrix := identityMatrix()
+
+}*/

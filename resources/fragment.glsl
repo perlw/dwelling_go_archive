@@ -1,7 +1,8 @@
 #version 330
 
-out vec4 frag;
+in vec4 color;
+out vec4 outputF;
 
 void main() {
-	frag = vec4(1.0, 0.0, 0.0, 1.0);
+	outputF = vec4(1.0, 0.5, 0.25, 1.0);
 }
