@@ -9,8 +9,17 @@ import (
 	"runtime"
 )
 
+import (
+	"dwelling/matrix"
+)
+
 func main() {
 	runtime.LockOSThread()
+
+	matA := matrix.NewTestMatrix()
+	fmt.Println(matA)
+	matA.Multiply(matrix.NewTestMatrix())
+	fmt.Println(matA)
 
 	if err := glfw.Init(); err != nil {
 		fmt.Printf("glfw: %s\n", err)
