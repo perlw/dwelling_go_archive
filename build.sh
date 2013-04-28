@@ -1,7 +1,7 @@
 #!/bin/bash
 
 BUILD_DIR="build"
-PRGN_NAME="sim_game"
+PRGN_NAME="dwelling"
 
 function build {
     rm -rf ${BUILD_DIR}

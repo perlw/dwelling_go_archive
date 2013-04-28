@@ -57,7 +57,7 @@ func main() {
 		0.5, -0.5, 0.0,
 		0.0, 0.5, 0.0,
 	}
-	vertexBuffer := makeBuffer(gl.ARRAY_BUFFER, gl.Pointer(&vertexData[0]), 4*len(vertexData))
+	vertexBuffer := makeBuffer(gl.ARRAY_BUFFER, gl.Pointer(&vertexData[0]), 4*len(vertexData)) // 4 == sizeof float32
 
 	program := readShaders()
 
@@ -119,7 +119,7 @@ func makeBuffer(target gl.Enum, buffer_data gl.Pointer, size int) gl.Uint {
 
 func readShaders() gl.Uint {
 	// Vertex shader
-	vertexFile, err := ioutil.ReadFile("vertex.glsl")
+	vertexFile, err := ioutil.ReadFile("simple.vert")
 	if err != nil {
 		return 0
 	}
@@ -133,7 +133,7 @@ func readShaders() gl.Uint {
 	printShaderLog(vertexObj)
 
 	// Fragment shader
-	fragmentFile, err := ioutil.ReadFile("fragment.glsl")
+	fragmentFile, err := ioutil.ReadFile("simple.frag")
 	if err != nil {
 		return 0
 	}
