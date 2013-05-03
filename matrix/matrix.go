@@ -61,44 +61,56 @@ func (m *Matrix) Translate(x, y, z float32) {
 	transMatrix.values[7] = y
 	transMatrix.values[11] = z
 
-	m = MultiplyMatrix(m, transMatrix)
+	m.values = MultiplyMatrix(m, transMatrix).values
 }
 
 func (m *Matrix) RotateX(rot float32) {
+	radii := rot * (math.Pi / 180.0)
+	cos := float32(math.Cos(float64(radii)))
+	sin := float32(math.Sin(float64(radii)))
+
 	rotMatrix := &Matrix{
 		values: [...]float32{
 			1, 0, 0, 0,
-			0, 1, 0, 0,
-			0, 0, 1, 0,
+			0, cos, sin, 0,
+			0, -sin, cos, 0,
 			0, 0, 0, 1,
 		},
 	}
 
-	m = MultiplyMatrix(m, rotMatrix)
+	m.values = MultiplyMatrix(m, rotMatrix).values
 }
 
 func (m *Matrix) RotateY(rot float32) {
+	radii := rot * (math.Pi / 180.0)
+	cos := float32(math.Cos(float64(radii)))
+	sin := float32(math.Sin(float64(radii)))
+
 	rotMatrix := &Matrix{
 		values: [...]float32{
-			1, 0, 0, 0,
+			cos, 0, -sin, 0,
 			0, 1, 0, 0,
-			0, 0, 1, 0,
+			sin, 0, cos, 0,
 			0, 0, 0, 1,
 		},
 	}
 
-	m = MultiplyMatrix(m, rotMatrix)
+	m.values = MultiplyMatrix(m, rotMatrix).values
 }
 
 func (m *Matrix) RotateZ(rot float32) {
+	radii := rot * (math.Pi / 180.0)
+	cos := float32(math.Cos(float64(radii)))
+	sin := float32(math.Sin(float64(radii)))
+
 	rotMatrix := &Matrix{
 		values: [...]float32{
-			1, 0, 0, 0,
-			0, 1, 0, 0,
+			cos, sin, 0, 0,
+			-sin, cos, 0, 0,
 			0, 0, 1, 0,
 			0, 0, 0, 1,
 		},
 	}
 
-	m = MultiplyMatrix(m, rotMatrix)
+	m.values = MultiplyMatrix(m, rotMatrix).values
 }
