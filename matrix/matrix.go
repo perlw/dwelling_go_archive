@@ -3,12 +3,12 @@ package matrix
 import "math"
 
 type Matrix struct {
-	values [16]float32
+	Values [16]float32
 }
 
 func NewIdentityMatrix() *Matrix {
 	return &Matrix{
-		values: [...]float32{
+		Values: [...]float32{
 			1, 0, 0, 0,
 			0, 1, 0, 0,
 			0, 0, 1, 0,
@@ -23,10 +23,10 @@ func NewPerspectiveMatrix(fov, ratio, nearZ, farZ float32) *Matrix {
 	zDiff := farZ - nearZ
 
 	matrix := &Matrix{
-		values: [...]float32{
+		Values: [...]float32{
 			f / ratio, 0, 0, 0,
 			0, f, 0, 0,
-			0, 0, -(farZ + nearZ) / zDiff, (2.0 * farZ * nearZ) / zDiff,
+			0, 0, -(farZ + nearZ) / zDiff, -(2.0 * farZ * nearZ) / zDiff,
 			0, 0, -1.0, 0.0,
 		},
 	}
@@ -39,29 +39,29 @@ func MultiplyMatrix(matrixA, matrixB *Matrix) *Matrix {
 
 	for y := 0; y < 4; y++ {
 		j := y * 4
-		row := [...]float32{matrixA.values[j], matrixA.values[j+1], matrixA.values[j+2], matrixA.values[j+3]}
+		row := [...]float32{matrixA.Values[j], matrixA.Values[j+1], matrixA.Values[j+2], matrixA.Values[j+3]}
 
 		for x := 0; x < 4; x++ {
 			i := (y * 4) + x
 
-			col := [...]float32{matrixB.values[x], matrixB.values[4+x], matrixB.values[8+x], matrixB.values[12+x]}
+			col := [...]float32{matrixB.Values[x], matrixB.Values[4+x], matrixB.Values[8+x], matrixB.Values[12+x]}
 
 			values[i] = (row[0] * col[0]) + (row[1] * col[1]) + (row[2] * col[2]) + (row[3] * col[3])
 		}
 
 	}
 
-	return &Matrix{values: values}
+	return &Matrix{Values: values}
 }
 
 func (m *Matrix) Translate(x, y, z float32) {
 	transMatrix := NewIdentityMatrix()
 
-	transMatrix.values[3] = x
-	transMatrix.values[7] = y
-	transMatrix.values[11] = z
+	transMatrix.Values[3] = x
+	transMatrix.Values[7] = y
+	transMatrix.Values[11] = z
 
-	m.values = MultiplyMatrix(m, transMatrix).values
+	m.Values = MultiplyMatrix(m, transMatrix).Values
 }
 
 func (m *Matrix) RotateX(rot float32) {
@@ -70,7 +70,7 @@ func (m *Matrix) RotateX(rot float32) {
 	sin := float32(math.Sin(radii))
 
 	rotMatrix := &Matrix{
-		values: [...]float32{
+		Values: [...]float32{
 			1, 0, 0, 0,
 			0, cos, sin, 0,
 			0, -sin, cos, 0,
@@ -78,7 +78,7 @@ func (m *Matrix) RotateX(rot float32) {
 		},
 	}
 
-	m.values = MultiplyMatrix(m, rotMatrix).values
+	m.Values = MultiplyMatrix(m, rotMatrix).Values
 }
 
 func (m *Matrix) RotateY(rot float32) {
@@ -87,7 +87,7 @@ func (m *Matrix) RotateY(rot float32) {
 	sin := float32(math.Sin(radii))
 
 	rotMatrix := &Matrix{
-		values: [...]float32{
+		Values: [...]float32{
 			cos, 0, -sin, 0,
 			0, 1, 0, 0,
 			sin, 0, cos, 0,
@@ -95,7 +95,7 @@ func (m *Matrix) RotateY(rot float32) {
 		},
 	}
 
-	m.values = MultiplyMatrix(m, rotMatrix).values
+	m.Values = MultiplyMatrix(m, rotMatrix).Values
 }
 
 func (m *Matrix) RotateZ(rot float32) {
@@ -104,7 +104,7 @@ func (m *Matrix) RotateZ(rot float32) {
 	sin := float32(math.Sin(radii))
 
 	rotMatrix := &Matrix{
-		values: [...]float32{
+		Values: [...]float32{
 			cos, sin, 0, 0,
 			-sin, cos, 0, 0,
 			0, 0, 1, 0,
@@ -112,5 +112,5 @@ func (m *Matrix) RotateZ(rot float32) {
 		},
 	}
 
-	m.values = MultiplyMatrix(m, rotMatrix).values
+	m.Values = MultiplyMatrix(m, rotMatrix).Values
 }

@@ -11,8 +11,8 @@ func TestIdentity(t *testing.T) {
 		0, 0, 0, 1,
 	}
 
-	if matrix.values != testValues {
-		t.Errorf("Expected %v, got %v", testValues, matrix.values)
+	if matrix.Values != testValues {
+		t.Errorf("Expected %v, got %v", testValues, matrix.Values)
 	}
 }
 
@@ -21,12 +21,12 @@ func TestPerspective(t *testing.T) {
 	testValues := [...]float32{
 		1.3032254, 0, 0, 0,
 		0, 1.3032254, 0, 0,
-		0, 0, -1.002002, 2.002002,
+		0, 0, -1.002002, -2.002002,
 		0, 0, -1, 0,
 	}
 
-	if matrix.values != testValues {
-		t.Errorf("Expected %v, got %v", testValues, matrix.values)
+	if matrix.Values != testValues {
+		t.Errorf("Expected %v, got %v", testValues, matrix.Values)
 	}
 }
 
@@ -99,12 +99,12 @@ func TestMultiplyMatrix(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		matrixA := &Matrix{values: test.matrixA}
-		matrixB := &Matrix{values: test.matrixB}
+		matrixA := &Matrix{Values: test.matrixA}
+		matrixB := &Matrix{Values: test.matrixB}
 
 		result := MultiplyMatrix(matrixA, matrixB)
-		if result.values != test.expected {
-			t.Errorf("Expected %v, got %v", test.expected, result.values)
+		if result.Values != test.expected {
+			t.Errorf("Expected %v, got %v", test.expected, result.Values)
 		}
 	}
 }
@@ -162,8 +162,8 @@ func TestRotationMatrix(t *testing.T) {
 		matrix.RotateY(test.y)
 		matrix.RotateZ(test.z)
 
-		if matrix.values != test.expected {
-			t.Errorf("expected %v, got %v", test.expected, matrix.values)
+		if matrix.Values != test.expected {
+			t.Errorf("expected %v, got %v", test.expected, matrix.Values)
 		}
 	}
 }

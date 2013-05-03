@@ -16,13 +16,6 @@ import (
 func main() {
 	runtime.LockOSThread()
 
-	matA := matrix.NewIdentityMatrix()
-	fmt.Println(matA)
-	/*matA.MultiplyMatrix(matrix.NewTestMatrix())
-	fmt.Println(matA)
-
-	return*/
-
 	if err := glfw.Init(); err != nil {
 		fmt.Printf("glfw: %s\n", err)
 		return
@@ -52,11 +45,12 @@ func main() {
 	gl.DepthFunc(gl.LEQUAL)
 	gl.Viewport(0, 0, 640, 480)
 
-	vMatrix := viewMatrix()
-	projMatrix := perspectiveMatrix(53.13, 640.0/480.0, 0.1, 1000.0)
-	modelMatrix := translationMatrix(0.0, 0.0, -5.0)
+	viewMatrix := matrix.NewIdentityMatrix()
+	viewMatrix.Translate(4.0, 0.0, 0.0)
+	viewMatrix.RotateY(-45.0)
+	projMatrix := matrix.NewPerspectiveMatrix(53.13, 640.0/480.0, 0.1, 1000.0)
 	fmt.Println(projMatrix)
-	fmt.Println(modelMatrix)
+	fmt.Println(viewMatrix)
 
 	var vao gl.Uint
 	gl.GenVertexArrays(1, &vao)
@@ -84,9 +78,8 @@ func main() {
 	defer gl.GLStringFree(model)
 	modelId := gl.GetUniformLocation(program, model)
 
-	projMatrix = flipMatrix(projMatrix)
-	vMatrix = flipMatrix(vMatrix)
-	modelMatrix = flipMatrix(modelMatrix)
+	glViewMatrix := matrixToGL(viewMatrix)
+	glProjMatrix := matrixToGL(projMatrix)
 
 	xpos := 0.0
 	gl.ClearColor(0.5, 0.5, 1.0, 1.0)
@@ -97,12 +90,14 @@ func main() {
 		if xpos > math.Pi*2 {
 			xpos = 0.0
 		}
-		modelMatrix = flipMatrix(translationMatrix(gl.Float(math.Sin(xpos)), 0.0, -5.0+gl.Float(math.Cos(xpos))))
+		modelMatrix := matrix.NewIdentityMatrix()
+		modelMatrix.Translate(float32(math.Sin(xpos)), 0.0, -5.0+float32(math.Cos(xpos)))
+		glModelMatrix := matrixToGL(modelMatrix)
 
 		gl.UseProgram(program)
-		gl.UniformMatrix4fv(projId, 1, gl.FALSE, &projMatrix[0])
-		gl.UniformMatrix4fv(viewId, 1, gl.FALSE, &vMatrix[0])
-		gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &modelMatrix[0])
+		gl.UniformMatrix4fv(projId, 1, gl.FALSE, &glProjMatrix[0])
+		gl.UniformMatrix4fv(viewId, 1, gl.FALSE, &glViewMatrix[0])
+		gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
 
 		gl.BindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
 		gl.EnableVertexAttribArray(0)
@@ -192,65 +187,14 @@ func printProgramLog(program gl.Uint) {
 	fmt.Println("program log: ", gl.GoString(glString))
 }
 
-func identityMatrix() [16]gl.Float {
-	return [16]gl.Float{
-		1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0,
-		0, 0, 0, 1,
-	}
-}
-
-func viewMatrix() [16]gl.Float {
-	matrix := identityMatrix()
-
-	matrix[0] = gl.Float(math.Cos(-0.83))
-	matrix[2] = gl.Float(-math.Sin(-0.83))
-	matrix[8] = gl.Float(math.Sin(-0.83))
-	matrix[10] = gl.Float(math.Cos(-0.83))
-
-	matrix[3] = 4.0
-	matrix[7] = 0.0
-	matrix[11] = 0.0
-
-	return matrix
-}
-
-func perspectiveMatrix(fov, ratio, nearp, farp float64) [16]gl.Float {
-	f := 1.0 / math.Tan((fov/2.0)*(math.Pi/180.0))
-
-	matrix := identityMatrix()
-	matrix[0] = gl.Float(f / ratio)
-	matrix[5] = gl.Float(f)
-	matrix[10] = -gl.Float((farp + nearp) / (farp - nearp))
-	matrix[11] = -gl.Float((2.0 * farp * nearp) / (farp - nearp))
-	matrix[14] = -1.0
-	matrix[15] = 0.0
-
-	return matrix
-}
-
-func translationMatrix(x, y, z gl.Float) [16]gl.Float {
-	matrix := identityMatrix()
-	matrix[3] = x
-	matrix[7] = y
-	matrix[11] = z
-	return matrix
-}
-
-func flipMatrix(matrix [16]gl.Float) [16]gl.Float {
+func matrixToGL(matrix *matrix.Matrix) [16]gl.Float {
 	var newMatrix [16]gl.Float
 
 	for y := 0; y < 4; y++ {
 		for x := 0; x < 4; x++ {
-			newMatrix[(x*4)+y] = matrix[(y*4)+x]
+			newMatrix[(x*4)+y] = gl.Float(matrix.Values[(y*4)+x])
 		}
 	}
 
 	return newMatrix
 }
-
-/*func multMatrix(a, b gl.Float) [16]gl.Float {
-	matrix := identityMatrix()
-
-}*/
