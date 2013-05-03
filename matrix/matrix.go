@@ -1,7 +1,6 @@
 package matrix
 
 import "math"
-import "fmt"
 
 type Matrix struct {
 	values [16]float32
@@ -14,17 +13,6 @@ func NewIdentityMatrix() *Matrix {
 			0, 1, 0, 0,
 			0, 0, 1, 0,
 			0, 0, 0, 1,
-		},
-	}
-}
-
-func NewTestMatrix() *Matrix {
-	return &Matrix{
-		values: [...]float32{
-			0, 1, 2, 3,
-			4, 5, 6, 7,
-			8, 9, 10, 11,
-			12, 13, 14, 15,
 		},
 	}
 }
@@ -46,6 +34,26 @@ func NewPerspectiveMatrix(fov, ratio, nearZ, farZ float32) *Matrix {
 	return matrix
 }
 
+func MultiplyMatrix(matrixA, matrixB *Matrix) *Matrix {
+	values := [16]float32{}
+
+	for y := 0; y < 4; y++ {
+		j := y * 4
+		row := [...]float32{matrixA.values[j], matrixA.values[j+1], matrixA.values[j+2], matrixA.values[j+3]}
+
+		for x := 0; x < 4; x++ {
+			i := (y * 4) + x
+
+			col := [...]float32{matrixB.values[x], matrixB.values[4+x], matrixB.values[8+x], matrixB.values[12+x]}
+
+			values[i] = (row[0] * col[0]) + (row[1] * col[1]) + (row[2] * col[2]) + (row[3] * col[3])
+		}
+
+	}
+
+	return &Matrix{values: values}
+}
+
 func (m *Matrix) Translate(x, y, z float32) {
 	transMatrix := NewIdentityMatrix()
 
@@ -53,25 +61,44 @@ func (m *Matrix) Translate(x, y, z float32) {
 	transMatrix.values[7] = y
 	transMatrix.values[11] = z
 
-	m.Multiply(transMatrix)
+	m = MultiplyMatrix(m, transMatrix)
 }
 
-func (m *Matrix) Multiply(in *Matrix) {
-	values := [16]float32{}
-
-	for y := 0; y < 4; y++ {
-		j := y * 4
-		row := [...]float32{m.values[j], m.values[j+1], m.values[j+2], m.values[j+3]}
-
-		for x := 0; x < 4; x++ {
-			i := (y * 4) + x
-
-			col := [...]float32{in.values[x], in.values[4+x], in.values[8+x], in.values[12+x]}
-
-			values[i] = (row[0] * col[0]) + (row[1] * col[1]) + (row[2] * col[2]) + (row[3] * col[3])
-		}
-
+func (m *Matrix) RotateX(rot float32) {
+	rotMatrix := &Matrix{
+		values: [...]float32{
+			1, 0, 0, 0,
+			0, 1, 0, 0,
+			0, 0, 1, 0,
+			0, 0, 0, 1,
+		},
 	}
 
-	fmt.Println(values)
+	m = MultiplyMatrix(m, rotMatrix)
+}
+
+func (m *Matrix) RotateY(rot float32) {
+	rotMatrix := &Matrix{
+		values: [...]float32{
+			1, 0, 0, 0,
+			0, 1, 0, 0,
+			0, 0, 1, 0,
+			0, 0, 0, 1,
+		},
+	}
+
+	m = MultiplyMatrix(m, rotMatrix)
+}
+
+func (m *Matrix) RotateZ(rot float32) {
+	rotMatrix := &Matrix{
+		values: [...]float32{
+			1, 0, 0, 0,
+			0, 1, 0, 0,
+			0, 0, 1, 0,
+			0, 0, 0, 1,
+		},
+	}
+
+	m = MultiplyMatrix(m, rotMatrix)
 }

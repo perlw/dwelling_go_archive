@@ -16,10 +16,12 @@ import (
 func main() {
 	runtime.LockOSThread()
 
-	matA := matrix.NewTestMatrix()
+	matA := matrix.NewIdentityMatrix()
 	fmt.Println(matA)
-	matA.Multiply(matrix.NewTestMatrix())
+	/*matA.MultiplyMatrix(matrix.NewTestMatrix())
 	fmt.Println(matA)
+
+	return*/
 
 	if err := glfw.Init(); err != nil {
 		fmt.Printf("glfw: %s\n", err)
