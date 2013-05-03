@@ -2,10 +2,8 @@
 
 layout(location = 0) in vec4 vert;
 
-uniform mat4 view;
-uniform mat4 proj;
-uniform mat4 model;
+uniform mat4 pvm;
 
 void main() {
-	gl_Position = proj * view * model * vert;
+	gl_Position = pvm * vert;
 }

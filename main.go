@@ -68,21 +68,15 @@ func main() {
 
 	gl.UseProgram(program)
 
-	view := gl.GLString("view")
-	defer gl.GLStringFree(view)
-	viewId := gl.GetUniformLocation(program, view)
-	proj := gl.GLString("proj")
-	defer gl.GLStringFree(proj)
-	projId := gl.GetUniformLocation(program, proj)
-	model := gl.GLString("model")
-	defer gl.GLStringFree(model)
-	modelId := gl.GetUniformLocation(program, model)
+	pvm := gl.GLString("pvm")
+	defer gl.GLStringFree(pvm)
+	pvmId := gl.GetUniformLocation(program, pvm)
 
-	glViewMatrix := matrixToGL(viewMatrix)
-	glProjMatrix := matrixToGL(projMatrix)
+	pvmMatrix := matrix.MultiplyMatrix(projMatrix, viewMatrix)
 
 	xpos := 0.0
 	gl.ClearColor(0.5, 0.5, 1.0, 1.0)
+
 	for glfw.WindowParam(glfw.Opened) == 1 {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
@@ -92,12 +86,11 @@ func main() {
 		}
 		modelMatrix := matrix.NewIdentityMatrix()
 		modelMatrix.Translate(float32(math.Sin(xpos)), 0.0, -5.0+float32(math.Cos(xpos)))
-		glModelMatrix := matrixToGL(modelMatrix)
+
+		glPVMMatrix := matrixToGL(matrix.MultiplyMatrix(pvmMatrix, modelMatrix))
 
 		gl.UseProgram(program)
-		gl.UniformMatrix4fv(projId, 1, gl.FALSE, &glProjMatrix[0])
-		gl.UniformMatrix4fv(viewId, 1, gl.FALSE, &glViewMatrix[0])
-		gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
+		gl.UniformMatrix4fv(pvmId, 1, gl.FALSE, &glPVMMatrix[0])
 
 		gl.BindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
 		gl.EnableVertexAttribArray(0)
