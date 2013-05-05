@@ -124,11 +124,15 @@ func main() {
 	gl.UseProgram(program)
 
 	pv := gl.GLString("pv")
-	defer gl.GLStringFree(pv)
 	pvId := gl.GetUniformLocation(program, pv)
+	gl.GLStringFree(pv)
 	model := gl.GLString("model")
-	defer gl.GLStringFree(model)
 	modelId := gl.GetUniformLocation(program, model)
+	gl.GLStringFree(model)
+
+	heightStr := gl.GLString("height")
+	heightVal := gl.GetUniformLocation(program, heightStr)
+	gl.GLStringFree(heightStr)
 
 	pvMatrix := matrix.MultiplyMatrix(projMatrix, viewMatrix)
 
@@ -155,12 +159,11 @@ func main() {
 				modelMatrix := matrix.NewIdentityMatrix()
 				modelMatrix.Translate(float64(x), wave, float64(z))
 				modelMatrix.RotateX(angle)
-				/*modelMatrix.RotateX(rot)
-				modelMatrix.RotateY(rot)*/
 
 				glModelMatrix := matrixToGL(modelMatrix)
 
 				gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
+				gl.Uniform1f(heightVal, gl.Float((wave+1.0)/2.0))
 
 				gl.BindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
 				gl.BindBuffer(gl.ARRAY_BUFFER, normalBuffer)
@@ -221,11 +224,6 @@ func readShaders() gl.Uint {
 	program := gl.CreateProgram()
 	gl.AttachShader(program, vertexObj)
 	gl.AttachShader(program, fragmentObj)
-
-	// Attribs
-	fragmentOut := gl.GLString("outputF")
-	defer gl.GLStringFree(fragmentOut)
-	gl.BindFragDataLocation(program, 0, fragmentOut)
 
 	gl.LinkProgram(program)
 
