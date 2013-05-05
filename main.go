@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"math"
 	"runtime"
+	"time"
 	"unsafe"
 )
 
@@ -136,23 +137,28 @@ func main() {
 
 	pvMatrix := matrix.MultiplyMatrix(projMatrix, viewMatrix)
 
+	logicCh := make(chan float64)
+	go logicLoop(logicCh)
+
 	rot := 0.0
 	gl.ClearColor(0.5, 0.5, 1.0, 1.0)
+	currentTick := time.Now().UnixNano() / 1000000.0
+	frameCount := 0
 	for glfw.WindowParam(glfw.Opened) == 1 {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		rot += 0.005
-		if rot >= 360 {
-			rot = 0.0
+		select {
+		case rot = <-logicCh:
+		default:
 		}
 
 		glPVMatrix := matrixToGL(pvMatrix)
 		gl.UseProgram(program)
 		gl.UniformMatrix4fv(pvId, 1, gl.FALSE, &glPVMatrix[0])
 
-		for z := -5; z <= 5; z++ {
-			for x := -5; x <= 5; x++ {
-				delay := rot + float64(z*20)
+		for z := -10; z <= 10; z++ {
+			for x := -10; x <= 10; x++ {
+				delay := rot + float64(z*10) + float64(x*10)
 				wave := math.Sin(delay * (math.Pi / 180.0))
 
 				angle := wave * -15.0
@@ -178,6 +184,40 @@ func main() {
 		}
 
 		glfw.SwapBuffers()
+		frameCount++
+
+		newTick := time.Now().UnixNano() / 1000000.0
+		if newTick-currentTick >= 1000.0 {
+			fmt.Printf("FPS: %d\n", frameCount)
+			frameCount = 0
+			currentTick = newTick
+		}
+	}
+}
+
+func logicLoop(logicCh chan<- float64) {
+	currentTick := time.Now().UnixNano() / 1000000.0
+
+	rot := 0.0
+	remainder := 0.0
+	for {
+		newTick := time.Now().UnixNano() / 1000000.0
+		elapsedTick := float64(newTick-currentTick) + remainder
+		if elapsedTick >= 16.0 {
+			for elapsedTick >= 16.0 {
+				elapsedTick -= 16.0
+
+				rot += 0.5
+				if rot >= 360 {
+					rot = 0.0
+				}
+			}
+			remainder = math.Max(elapsedTick, 0.0)
+			currentTick = newTick
+			logicCh <- rot
+		}
+
+		time.Sleep(1)
 	}
 }
 
