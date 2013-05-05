@@ -5,6 +5,7 @@ import (
 	gl "github.com/chsc/gogl/gl33"
 	"github.com/jteeuwen/glfw"
 	"io/ioutil"
+	"math"
 	"runtime"
 	"unsafe"
 )
@@ -47,8 +48,9 @@ func main() {
 	gl.Viewport(0, 0, 640, 480)
 
 	viewMatrix := matrix.NewIdentityMatrix()
-	viewMatrix.Translate(4.0, 0.0, 0.0)
-	viewMatrix.RotateY(-45.0)
+	viewMatrix.RotateX(-25)
+	viewMatrix.RotateY(45)
+	viewMatrix.Translate(-6.0, -5.0, -6.0)
 	projMatrix := matrix.NewPerspectiveMatrix(53.13, 640.0/480.0, 0.1, 1000.0)
 	fmt.Println(projMatrix)
 	fmt.Println(viewMatrix)
@@ -121,11 +123,14 @@ func main() {
 
 	gl.UseProgram(program)
 
-	pvm := gl.GLString("pvm")
-	defer gl.GLStringFree(pvm)
-	pvmId := gl.GetUniformLocation(program, pvm)
+	pv := gl.GLString("pv")
+	defer gl.GLStringFree(pv)
+	pvId := gl.GetUniformLocation(program, pv)
+	model := gl.GLString("model")
+	defer gl.GLStringFree(model)
+	modelId := gl.GetUniformLocation(program, model)
 
-	pvmMatrix := matrix.MultiplyMatrix(projMatrix, viewMatrix)
+	pvMatrix := matrix.MultiplyMatrix(projMatrix, viewMatrix)
 
 	rot := 0.0
 	gl.ClearColor(0.5, 0.5, 1.0, 1.0)
@@ -136,20 +141,33 @@ func main() {
 		if rot >= 360 {
 			rot = 0.0
 		}
-		modelMatrix := matrix.NewIdentityMatrix()
-		modelMatrix.Translate(0.0, 0.0, -5.0)
-		modelMatrix.RotateX(rot)
-		modelMatrix.RotateY(rot)
 
-		glPVMMatrix := matrixToGL(matrix.MultiplyMatrix(pvmMatrix, modelMatrix))
-
+		glPVMatrix := matrixToGL(pvMatrix)
 		gl.UseProgram(program)
-		gl.UniformMatrix4fv(pvmId, 1, gl.FALSE, &glPVMMatrix[0])
+		gl.UniformMatrix4fv(pvId, 1, gl.FALSE, &glPVMatrix[0])
 
-		gl.BindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
-		gl.BindBuffer(gl.ARRAY_BUFFER, normalBuffer)
-		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer)
-		gl.DrawElements(gl.TRIANGLES, gl.Sizei(len(indexData)), gl.UNSIGNED_INT, nil)
+		for z := -5; z <= 5; z++ {
+			for x := -5; x <= 5; x++ {
+				delay := rot + float64(z*20)
+				wave := math.Sin(delay * (math.Pi / 180.0))
+
+				angle := wave * -15.0
+				modelMatrix := matrix.NewIdentityMatrix()
+				modelMatrix.Translate(float64(x), wave, float64(z))
+				modelMatrix.RotateX(angle)
+				/*modelMatrix.RotateX(rot)
+				modelMatrix.RotateY(rot)*/
+
+				glModelMatrix := matrixToGL(modelMatrix)
+
+				gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
+
+				gl.BindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
+				gl.BindBuffer(gl.ARRAY_BUFFER, normalBuffer)
+				gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer)
+				gl.DrawElements(gl.TRIANGLES, gl.Sizei(len(indexData)), gl.UNSIGNED_INT, nil)
+			}
+		}
 
 		if err := gl.GetError(); err != 0 {
 			fmt.Printf("Err: %d\n", err)
