@@ -5,8 +5,9 @@ import (
 	gl "github.com/chsc/gogl/gl33"
 	"github.com/jteeuwen/glfw"
 	"io/ioutil"
-	"math"
+	//"math"
 	"runtime"
+	"unsafe"
 )
 
 import (
@@ -56,13 +57,29 @@ func main() {
 	gl.GenVertexArrays(1, &vao)
 	gl.BindVertexArray(vao)
 
-	//sizeFloat := int(unsafe.Sizeof([1]float32{}))
+	sizeFloat := int(unsafe.Sizeof([1]float32{}))
+	sizeInt := int(unsafe.Sizeof([1]int{}))
 	vertexData := []float32{
-		-0.5, -0.5, 0.0,
-		0.5, -0.5, 0.0,
-		0.0, 0.5, 0.0,
+		-0.5, -0.5, 0.5,
+		0.5, -0.5, 0.5,
+		0.5, 0.5, 0.5,
+		-0.5, 0.5, 0.5,
+
+		0.5, -0.5, -0.5,
+		-0.5, -0.5, -0.5,
+		-0.5, 0.5, -0.5,
+		0.5, 0.5, -0.5,
 	}
-	vertexBuffer := makeBuffer(gl.ARRAY_BUFFER, gl.Pointer(&vertexData[0]), 4*len(vertexData)) // 4 == sizeof float32
+	indexData := []uint32{
+		0, 1, 2,
+		2, 3, 0,
+	}
+	vertexBuffer := makeBuffer(gl.ARRAY_BUFFER, gl.Pointer(&vertexData[0]), sizeFloat*len(vertexData)) // 4 == sizeof float32
+	indexBuffer := makeBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.Pointer(&indexData[0]), sizeInt*len(indexData))
+	gl.BindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
+	gl.EnableVertexAttribArray(0)
+	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
+	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 
 	program := readShaders()
 
@@ -74,18 +91,18 @@ func main() {
 
 	pvmMatrix := matrix.MultiplyMatrix(projMatrix, viewMatrix)
 
-	xpos := 0.0
+	rot := 0.0
 	gl.ClearColor(0.5, 0.5, 1.0, 1.0)
-
 	for glfw.WindowParam(glfw.Opened) == 1 {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		xpos += 0.0005
-		if xpos > math.Pi*2 {
-			xpos = 0.0
+		rot += 0.005
+		if rot > 359 {
+			rot = 0.0
 		}
 		modelMatrix := matrix.NewIdentityMatrix()
-		modelMatrix.Translate(float32(math.Sin(xpos)), 0.0, -5.0+float32(math.Cos(xpos)))
+		modelMatrix.Translate(0.0, 0.0, -5.0)
+		modelMatrix.RotateY(rot)
 
 		glPVMMatrix := matrixToGL(matrix.MultiplyMatrix(pvmMatrix, modelMatrix))
 
@@ -93,9 +110,8 @@ func main() {
 		gl.UniformMatrix4fv(pvmId, 1, gl.FALSE, &glPVMMatrix[0])
 
 		gl.BindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
-		gl.EnableVertexAttribArray(0)
-		gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
-		gl.DrawArrays(gl.TRIANGLES, 0, 3)
+		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer)
+		gl.DrawElements(gl.TRIANGLES, gl.Sizei(len(indexData)), gl.UNSIGNED_INT, nil)
 
 		if err := gl.GetError(); err != 0 {
 			fmt.Printf("Err: %d\n", err)
