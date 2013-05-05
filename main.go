@@ -71,6 +71,30 @@ func main() {
 		-0.5, -0.5, -0.5, // 5
 		-0.5, 0.5, -0.5, // 6
 		0.5, 0.5, -0.5, // 7
+
+		// Left
+		-0.5, -0.5, -0.5, // 8
+		-0.5, -0.5, 0.5, // 9
+		-0.5, 0.5, 0.5, // 10
+		-0.5, 0.5, -0.5, // 11
+
+		// Right
+		0.5, -0.5, 0.5, // 12
+		0.5, -0.5, -0.5, // 13
+		0.5, 0.5, -0.5, // 14
+		0.5, 0.5, 0.5, // 15
+
+		// Top
+		0.5, 0.5, -0.5, // 16
+		-0.5, 0.5, -0.5, // 17
+		-0.5, 0.5, 0.5, // 18
+		0.5, 0.5, 0.5, // 19
+
+		// Bottom
+		-0.5, -0.5, -0.5, // 20
+		0.5, -0.5, -0.5, // 21
+		0.5, -0.5, 0.5, // 22
+		-0.5, -0.5, 0.5, // 23
 	}
 	normalData := []float32{
 		// Front
@@ -84,6 +108,30 @@ func main() {
 		0.0, 0.0, -1.0,
 		0.0, 0.0, -1.0,
 		0.0, 0.0, -1.0,
+
+		// Left
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+
+		// Right
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+
+		// Top
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+
+		// Bottom
+		0.0, -1.0, 0.0,
+		0.0, -1.0, 0.0,
+		0.0, -1.0, 0.0,
+		0.0, -1.0, 0.0,
 	}
 	indexData := []uint32{
 		// Front
@@ -93,6 +141,22 @@ func main() {
 		// Back
 		4, 5, 6,
 		6, 7, 4,
+
+		// Left
+		8, 9, 10,
+		10, 11, 8,
+
+		// Right
+		12, 13, 14,
+		14, 15, 12,
+
+		// Top
+		16, 17, 18,
+		18, 19, 16,
+
+		// Bottom
+		20, 21, 22,
+		22, 23, 20,
 	}
 	vertexBuffer := makeBuffer(gl.ARRAY_BUFFER, gl.Pointer(&vertexData[0]), sizeFloat*len(vertexData)) // 4 == sizeof float32
 	normalBuffer := makeBuffer(gl.ARRAY_BUFFER, gl.Pointer(&normalData[0]), sizeFloat*len(normalData))
@@ -126,6 +190,7 @@ func main() {
 		}
 		modelMatrix := matrix.NewIdentityMatrix()
 		modelMatrix.Translate(0.0, 0.0, -5.0)
+		modelMatrix.RotateX(rot)
 		modelMatrix.RotateY(rot)
 
 		glPVMMatrix := matrixToGL(matrix.MultiplyMatrix(pvmMatrix, modelMatrix))
