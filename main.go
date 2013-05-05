@@ -39,6 +39,7 @@ func main() {
 		fmt.Printf("gl: %s\n", err)
 	}
 
+	gl.Enable(gl.CULL_FACE)
 	gl.Enable(gl.DEPTH_TEST)
 	gl.ClearColor(0.5, 0.5, 0.5, 1.0)
 	gl.ClearDepth(1)
@@ -59,19 +60,21 @@ func main() {
 	sizeFloat := int(unsafe.Sizeof([1]float32{}))
 	sizeInt := int(unsafe.Sizeof([1]int{}))
 	vertexData := []float32{
-		-0.5, -0.5, 0.5,
-		0.5, -0.5, 0.5,
-		0.5, 0.5, 0.5,
-		-0.5, 0.5, 0.5,
+		-0.5, -0.5, 0.5, // 0
+		0.5, -0.5, 0.5, // 1
+		0.5, 0.5, 0.5, // 2
+		-0.5, 0.5, 0.5, // 3
 
-		0.5, -0.5, -0.5,
-		-0.5, -0.5, -0.5,
-		-0.5, 0.5, -0.5,
-		0.5, 0.5, -0.5,
+		0.5, -0.5, -0.5, // 4
+		-0.5, -0.5, -0.5, // 5
+		-0.5, 0.5, -0.5, // 6
+		0.5, 0.5, -0.5, // 7
 	}
 	indexData := []uint32{
 		0, 1, 2,
 		2, 3, 0,
+		4, 5, 6,
+		6, 7, 4,
 	}
 	vertexBuffer := makeBuffer(gl.ARRAY_BUFFER, gl.Pointer(&vertexData[0]), sizeFloat*len(vertexData)) // 4 == sizeof float32
 	indexBuffer := makeBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.Pointer(&indexData[0]), sizeInt*len(indexData))
