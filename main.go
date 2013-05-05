@@ -33,7 +33,7 @@ func main() {
 	defer glfw.CloseWindow()
 
 	glfw.SetSwapInterval(0)
-	glfw.SetWindowTitle("AH MAH GAHD IT WORKZ")
+	glfw.SetWindowTitle("Dwelling")
 
 	if err := gl.Init(); err != nil {
 		fmt.Printf("gl: %s\n", err)
@@ -60,27 +60,49 @@ func main() {
 	sizeFloat := int(unsafe.Sizeof([1]float32{}))
 	sizeInt := int(unsafe.Sizeof([1]int{}))
 	vertexData := []float32{
+		// Front
 		-0.5, -0.5, 0.5, // 0
 		0.5, -0.5, 0.5, // 1
 		0.5, 0.5, 0.5, // 2
 		-0.5, 0.5, 0.5, // 3
 
+		// Back
 		0.5, -0.5, -0.5, // 4
 		-0.5, -0.5, -0.5, // 5
 		-0.5, 0.5, -0.5, // 6
 		0.5, 0.5, -0.5, // 7
 	}
+	normalData := []float32{
+		// Front
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+
+		// Back
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+	}
 	indexData := []uint32{
+		// Front
 		0, 1, 2,
 		2, 3, 0,
+
+		// Back
 		4, 5, 6,
 		6, 7, 4,
 	}
 	vertexBuffer := makeBuffer(gl.ARRAY_BUFFER, gl.Pointer(&vertexData[0]), sizeFloat*len(vertexData)) // 4 == sizeof float32
+	normalBuffer := makeBuffer(gl.ARRAY_BUFFER, gl.Pointer(&normalData[0]), sizeFloat*len(normalData))
 	indexBuffer := makeBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.Pointer(&indexData[0]), sizeInt*len(indexData))
 	gl.BindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
 	gl.EnableVertexAttribArray(0)
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
+	gl.BindBuffer(gl.ARRAY_BUFFER, normalBuffer)
+	gl.EnableVertexAttribArray(1)
+	gl.VertexAttribPointer(1, 3, gl.FLOAT, gl.FALSE, 0, nil)
 	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 
 	program := readShaders()
@@ -99,7 +121,7 @@ func main() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		rot += 0.005
-		if rot > 359 {
+		if rot >= 360 {
 			rot = 0.0
 		}
 		modelMatrix := matrix.NewIdentityMatrix()
@@ -112,6 +134,7 @@ func main() {
 		gl.UniformMatrix4fv(pvmId, 1, gl.FALSE, &glPVMMatrix[0])
 
 		gl.BindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
+		gl.BindBuffer(gl.ARRAY_BUFFER, normalBuffer)
 		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer)
 		gl.DrawElements(gl.TRIANGLES, gl.Sizei(len(indexData)), gl.UNSIGNED_INT, nil)
 
