@@ -22,14 +22,14 @@ function build {
         if [ $? -eq 0 ]; then
             echo "OK"
         else
-            echo "FAIL"
+            echo "Tests FAIL"
             exit $?
         fi
 
         echo "Copying resources"
         cp -R ../resources/* .
     else
-        echo "Tests FAIL"
+        echo "Build FAIL"
         exit $?
     fi
 

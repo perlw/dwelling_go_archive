@@ -5,7 +5,6 @@ import (
 	gl "github.com/chsc/gogl/gl33"
 	"github.com/jteeuwen/glfw"
 	"io/ioutil"
-	//"math"
 	"runtime"
 	"unsafe"
 )
