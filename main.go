@@ -129,13 +129,16 @@ func main() {
 				wave := math.Sin(delay * (math.Pi / 180.0))
 				angle := wave * -15.0
 
+				px := float64(x * pyramidBase * 2)
+				pz := float64(z * pyramidBase * 2)
+
 				gl.Uniform1f(waveId, gl.Float((wave+1.0)/2.0))
 				modelMatrix := matrix.NewIdentityMatrix()
-				modelMatrix.Translate(float64(x*pyramidBase*2-pyramidBase), wave*float64(pyramidBase/4), float64(z*pyramidBase*2-pyramidBase))
+				modelMatrix.Translate(px, wave*float64(pyramidBase/4), pz)
 				modelMatrix.RotateY(angle)
 				glModelMatrix := matrixToGL(modelMatrix)
 				gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
-				drawWorld(worldData, normalId)
+				drawWorld(worldData, normalId, px, 0.0, pz)
 			}
 		}
 
@@ -318,7 +321,7 @@ func buildWorldMesh() WorldMesh {
 	return worldData
 }
 
-func drawWorld(worldData WorldMesh, normalId gl.Int) {
+func drawWorld(worldData WorldMesh, normalId gl.Int, x, y, z float64) {
 	frontNormal := [3]gl.Float{0.0, 0.0, 1.0}
 	backNormal := [3]gl.Float{0.0, 0.0, -1.0}
 	leftNormal := [3]gl.Float{-1.0, 0.0, 0.0}
@@ -326,46 +329,62 @@ func drawWorld(worldData WorldMesh, normalId gl.Int) {
 	topNormal := [3]gl.Float{0.0, 1.0, 0.0}
 	bottomNormal := [3]gl.Float{0.0, -1.0, 0.0}
 
+	camX := float64(pyramidBase * 8)
+	camY := float64(pyramidBase * 2)
+	camZ := float64(pyramidBase * 8)
+
 	if worldData.numFrontFaces > 0 {
-		gl.Uniform3fv(normalId, 1, &frontNormal[0])
-		gl.BindBuffer(gl.ARRAY_BUFFER, worldData.frontFaceBuffer)
-		gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
-		gl.DrawArrays(gl.TRIANGLES, 0, worldData.numFrontFaces)
+		if camZ > z {
+			gl.Uniform3fv(normalId, 1, &frontNormal[0])
+			gl.BindBuffer(gl.ARRAY_BUFFER, worldData.frontFaceBuffer)
+			gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
+			gl.DrawArrays(gl.TRIANGLES, 0, worldData.numFrontFaces)
+		}
 	}
 
 	if worldData.numBackFaces > 0 {
-		gl.Uniform3fv(normalId, 1, &backNormal[0])
-		gl.BindBuffer(gl.ARRAY_BUFFER, worldData.backFaceBuffer)
-		gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
-		gl.DrawArrays(gl.TRIANGLES, 0, worldData.numBackFaces)
+		if camZ < z {
+			gl.Uniform3fv(normalId, 1, &backNormal[0])
+			gl.BindBuffer(gl.ARRAY_BUFFER, worldData.backFaceBuffer)
+			gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
+			gl.DrawArrays(gl.TRIANGLES, 0, worldData.numBackFaces)
+		}
 	}
 
 	if worldData.numLeftFaces > 0 {
-		gl.Uniform3fv(normalId, 1, &leftNormal[0])
-		gl.BindBuffer(gl.ARRAY_BUFFER, worldData.leftFaceBuffer)
-		gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
-		gl.DrawArrays(gl.TRIANGLES, 0, worldData.numLeftFaces)
+		if camX < x {
+			gl.Uniform3fv(normalId, 1, &leftNormal[0])
+			gl.BindBuffer(gl.ARRAY_BUFFER, worldData.leftFaceBuffer)
+			gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
+			gl.DrawArrays(gl.TRIANGLES, 0, worldData.numLeftFaces)
+		}
 	}
 
 	if worldData.numRightFaces > 0 {
-		gl.Uniform3fv(normalId, 1, &rightNormal[0])
-		gl.BindBuffer(gl.ARRAY_BUFFER, worldData.rightFaceBuffer)
-		gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
-		gl.DrawArrays(gl.TRIANGLES, 0, worldData.numRightFaces)
+		if camX > x {
+			gl.Uniform3fv(normalId, 1, &rightNormal[0])
+			gl.BindBuffer(gl.ARRAY_BUFFER, worldData.rightFaceBuffer)
+			gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
+			gl.DrawArrays(gl.TRIANGLES, 0, worldData.numRightFaces)
+		}
 	}
 
 	if worldData.numTopFaces > 0 {
-		gl.Uniform3fv(normalId, 1, &topNormal[0])
-		gl.BindBuffer(gl.ARRAY_BUFFER, worldData.topFaceBuffer)
-		gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
-		gl.DrawArrays(gl.TRIANGLES, 0, worldData.numTopFaces)
+		if camY > y {
+			gl.Uniform3fv(normalId, 1, &topNormal[0])
+			gl.BindBuffer(gl.ARRAY_BUFFER, worldData.topFaceBuffer)
+			gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
+			gl.DrawArrays(gl.TRIANGLES, 0, worldData.numTopFaces)
+		}
 	}
 
 	if worldData.numBottomFaces > 0 {
-		gl.Uniform3fv(normalId, 1, &bottomNormal[0])
-		gl.BindBuffer(gl.ARRAY_BUFFER, worldData.bottomFaceBuffer)
-		gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
-		gl.DrawArrays(gl.TRIANGLES, 0, worldData.numBottomFaces)
+		if camY < y {
+			gl.Uniform3fv(normalId, 1, &bottomNormal[0])
+			gl.BindBuffer(gl.ARRAY_BUFFER, worldData.bottomFaceBuffer)
+			gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
+			gl.DrawArrays(gl.TRIANGLES, 0, worldData.numBottomFaces)
+		}
 	}
 }
 
