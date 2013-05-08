@@ -15,6 +15,31 @@ import (
 	"dwelling/matrix"
 )
 
+type Camera struct {
+	X, Y, Z    float64
+	Rx, Ry, Rz float64
+
+	ViewMatrix       *matrix.Matrix
+	ProjectionMatrix *matrix.Matrix
+	PVMatrix         *matrix.Matrix
+}
+
+func (cam *Camera) updateViewMatrix() {
+	view := matrix.NewIdentityMatrix()
+	view.RotateX(-cam.Rx)
+	view.RotateY(-cam.Ry)
+	view.RotateZ(-cam.Rz)
+	view.Translate(-cam.X, -cam.Y, -cam.Z)
+
+	cam.ViewMatrix = view
+}
+
+func (cam *Camera) updatePVMatrix() {
+	cam.PVMatrix = matrix.MultiplyMatrix(cam.ProjectionMatrix, cam.ViewMatrix)
+}
+
+var cam = Camera{X: 8.0, Y: 8.0, Z: 16.0, Rx: 0.0, Ry: 0.0, Rz: 0.0}
+
 func main() {
 	runtime.LockOSThread()
 
@@ -48,11 +73,9 @@ func main() {
 	gl.DepthFunc(gl.LEQUAL)
 	gl.Viewport(0, 0, 640, 480)
 
-	viewMatrix := matrix.NewIdentityMatrix()
-	viewMatrix.RotateX(-25)
-	viewMatrix.RotateY(45)
-	viewMatrix.Translate(-16.0, -8.0, -16.0)
-	projMatrix := matrix.NewPerspectiveMatrix(53.13, 640.0/480.0, 0.1, 1000.0)
+	cam.ProjectionMatrix = matrix.NewPerspectiveMatrix(53.13, 640.0/480.0, 0.1, 1000.0)
+	cam.updateViewMatrix()
+	cam.updatePVMatrix()
 
 	var vao gl.Uint
 	gl.GenVertexArrays(1, &vao)
@@ -78,12 +101,9 @@ func main() {
 	maxHeightId := gl.GetUniformLocation(program, maxHeight)
 	gl.GLStringFree(maxHeight)
 
-	pvMatrix := matrix.MultiplyMatrix(projMatrix, viewMatrix)
+	camCh := make(chan bool)
+	go logicLoop(camCh, &cam)
 
-	logicCh := make(chan float64)
-	go logicLoop(logicCh)
-
-	//rot := 0.0
 	gl.ClearColor(0.5, 0.5, 1.0, 1.0)
 	currentTick := time.Now().UnixNano() / 1000000.0
 	frameCount := 0
@@ -91,11 +111,13 @@ func main() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		select {
-		case <-logicCh:
+		case <-camCh:
+			cam.updateViewMatrix()
+			cam.updatePVMatrix()
 		default:
 		}
 
-		glPVMatrix := matrixToGL(pvMatrix)
+		glPVMatrix := matrixToGL(cam.PVMatrix)
 		gl.UseProgram(program)
 		gl.UniformMatrix4fv(pvId, 1, gl.FALSE, &glPVMatrix[0])
 
@@ -123,26 +145,84 @@ func main() {
 	}
 }
 
-func logicLoop(logicCh chan<- float64) {
+func logicLoop(camCh chan<- bool, cam *Camera) {
 	currentTick := time.Now().UnixNano() / 1000000.0
 
-	rot := 0.0
+	rotSpeed := 1.0
+	camSpeed := 0.25
+
 	remainder := 0.0
 	for {
 		newTick := time.Now().UnixNano() / 1000000.0
 		elapsedTick := float64(newTick-currentTick) + remainder
 		if elapsedTick >= 16.0 {
+			update := false
 			for elapsedTick >= 16.0 {
 				elapsedTick -= 16.0
 
-				rot += 0.5
-				if rot >= 360 {
-					rot = 0.0
+				// Execute logic
+				if glfw.Key(glfw.KeyUp) == glfw.KeyPress {
+					cam.Rx = math.Max(cam.Rx-rotSpeed, -90.0)
+					update = true
+				}
+				if glfw.Key(glfw.KeyDown) == glfw.KeyPress {
+					cam.Rx = math.Min(cam.Rx+rotSpeed, 90.0)
+					update = true
+				}
+				if glfw.Key(glfw.KeyLeft) == glfw.KeyPress {
+					cam.Ry -= rotSpeed
+					update = true
+				}
+				if glfw.Key(glfw.KeyRight) == glfw.KeyPress {
+					cam.Ry += rotSpeed
+					update = true
+				}
+
+				if glfw.Key('W') == glfw.KeyPress {
+					xRadii := -cam.Rx * (math.Pi / 180.0)
+					yRadii := -cam.Ry * (math.Pi / 180.0)
+					xMove := math.Sin(yRadii) * camSpeed
+					yMove := math.Sin(xRadii) * camSpeed
+					zMove := math.Cos(yRadii) * camSpeed
+					cam.X -= xMove
+					cam.Y += yMove
+					cam.Z -= zMove
+					update = true
+				}
+				if glfw.Key('S') == glfw.KeyPress {
+					xRadii := -cam.Rx * (math.Pi / 180.0)
+					yRadii := -cam.Ry * (math.Pi / 180.0)
+					xMove := math.Sin(yRadii) * camSpeed
+					yMove := math.Sin(xRadii) * camSpeed
+					zMove := math.Cos(yRadii) * camSpeed
+					cam.X += xMove
+					cam.Y -= yMove
+					cam.Z += zMove
+					update = true
+				}
+				if glfw.Key('A') == glfw.KeyPress {
+					yRadii := -(cam.Ry - 90.0) * (math.Pi / 180.0)
+					xMove := math.Sin(yRadii) * camSpeed
+					zMove := math.Cos(yRadii) * camSpeed
+					cam.X -= xMove
+					cam.Z -= zMove
+					update = true
+				}
+				if glfw.Key('D') == glfw.KeyPress {
+					yRadii := -(cam.Ry + 90.0) * (math.Pi / 180.0)
+					xMove := math.Sin(yRadii) * camSpeed
+					zMove := math.Cos(yRadii) * camSpeed
+					cam.X -= xMove
+					cam.Z -= zMove
+					update = true
 				}
 			}
 			remainder = math.Max(elapsedTick, 0.0)
 			currentTick = newTick
-			logicCh <- rot
+
+			if update {
+				camCh <- true
+			}
 		}
 
 		time.Sleep(1)
