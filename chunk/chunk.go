@@ -14,15 +14,26 @@ type Chunk struct {
 type Block struct {
 }
 
-func NewPyramidChunk() *Chunk {
+func NewPyramidChunk(inverted bool) *Chunk {
 	chunk := &Chunk{}
 
 	chunk.data = map[ChunkCoord]Block{}
-	for y := 0; y < CHUNK_BASE/2; y++ {
-		for x := y; x < CHUNK_BASE-y; x++ {
-			for z := y; z < CHUNK_BASE-y; z++ {
-				index := ChunkCoord{x: x, y: y, z: z}
-				chunk.data[index] = Block{}
+	if !inverted {
+		for y := 0; y < CHUNK_BASE/2; y++ {
+			for x := y; x < CHUNK_BASE-y; x++ {
+				for z := y; z < CHUNK_BASE-y; z++ {
+					index := ChunkCoord{x: x, y: y, z: z}
+					chunk.data[index] = Block{}
+				}
+			}
+		}
+	} else {
+		for y := 0; y < CHUNK_BASE/2; y++ {
+			for x := y; x < CHUNK_BASE-y; x++ {
+				for z := y; z < CHUNK_BASE-y; z++ {
+					index := ChunkCoord{x: x, y: (CHUNK_BASE / 2) - y, z: z}
+					chunk.data[index] = Block{}
+				}
 			}
 		}
 	}

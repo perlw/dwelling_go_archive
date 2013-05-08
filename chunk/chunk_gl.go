@@ -122,7 +122,6 @@ func (chunk *Chunk) UpdateChunkMesh() {
 		if _, ok := chunk.data[ChunkCoord{pos.x, pos.y, pos.z + 1}]; !ok {
 			appendChunkFace(&vertexBuffers[FRONT], x, y, z, FRONT)
 		}
-
 		if _, ok := chunk.data[ChunkCoord{pos.x, pos.y, pos.z - 1}]; !ok {
 			appendChunkFace(&vertexBuffers[BACK], x, y, z, BACK)
 		}

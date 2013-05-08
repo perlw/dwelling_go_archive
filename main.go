@@ -22,6 +22,12 @@ type Camera struct {
 	ViewMatrix       *matrix.Matrix
 	ProjectionMatrix *matrix.Matrix
 	PVMatrix         *matrix.Matrix
+
+	Planes [6]Plane
+}
+
+type Plane struct {
+	A, B, C, D float64
 }
 
 func (cam *Camera) updateViewMatrix() {
@@ -36,6 +42,105 @@ func (cam *Camera) updateViewMatrix() {
 
 func (cam *Camera) updatePVMatrix() {
 	cam.PVMatrix = matrix.MultiplyMatrix(cam.ProjectionMatrix, cam.ViewMatrix)
+}
+
+func (cam *Camera) updateFrustum() {
+	cam.Planes = [6]Plane{}
+
+	// Left
+	cam.Planes[0].A = cam.PVMatrix.Values[12] + cam.PVMatrix.Values[0]
+	cam.Planes[0].B = cam.PVMatrix.Values[13] + cam.PVMatrix.Values[1]
+	cam.Planes[0].C = cam.PVMatrix.Values[14] + cam.PVMatrix.Values[2]
+	cam.Planes[0].D = cam.PVMatrix.Values[15] + cam.PVMatrix.Values[3]
+
+	// Right
+	cam.Planes[1].A = cam.PVMatrix.Values[12] - cam.PVMatrix.Values[0]
+	cam.Planes[1].B = cam.PVMatrix.Values[13] - cam.PVMatrix.Values[1]
+	cam.Planes[1].C = cam.PVMatrix.Values[14] - cam.PVMatrix.Values[2]
+	cam.Planes[1].D = cam.PVMatrix.Values[15] - cam.PVMatrix.Values[3]
+
+	// Top
+	cam.Planes[2].A = cam.PVMatrix.Values[12] - cam.PVMatrix.Values[4]
+	cam.Planes[2].B = cam.PVMatrix.Values[13] - cam.PVMatrix.Values[5]
+	cam.Planes[2].C = cam.PVMatrix.Values[14] - cam.PVMatrix.Values[6]
+	cam.Planes[2].D = cam.PVMatrix.Values[15] - cam.PVMatrix.Values[7]
+
+	// Bottom
+	cam.Planes[3].A = cam.PVMatrix.Values[12] + cam.PVMatrix.Values[4]
+	cam.Planes[3].B = cam.PVMatrix.Values[13] + cam.PVMatrix.Values[5]
+	cam.Planes[3].C = cam.PVMatrix.Values[14] + cam.PVMatrix.Values[6]
+	cam.Planes[3].D = cam.PVMatrix.Values[15] + cam.PVMatrix.Values[7]
+
+	// Near
+	cam.Planes[4].A = cam.PVMatrix.Values[12] + cam.PVMatrix.Values[8]
+	cam.Planes[4].B = cam.PVMatrix.Values[13] + cam.PVMatrix.Values[9]
+	cam.Planes[4].C = cam.PVMatrix.Values[14] + cam.PVMatrix.Values[10]
+	cam.Planes[4].D = cam.PVMatrix.Values[15] + cam.PVMatrix.Values[11]
+
+	// Far
+	cam.Planes[5].A = cam.PVMatrix.Values[12] - cam.PVMatrix.Values[8]
+	cam.Planes[5].B = cam.PVMatrix.Values[13] - cam.PVMatrix.Values[9]
+	cam.Planes[5].C = cam.PVMatrix.Values[14] - cam.PVMatrix.Values[10]
+	cam.Planes[5].D = cam.PVMatrix.Values[15] - cam.PVMatrix.Values[11]
+
+	/*for t := range cam.Planes {
+		cam.Planes[t].Normalize()
+	}*/
+}
+
+func (cam *Camera) CubeInView(origo [3]float64, size float64) int {
+	corners := [8][3]float64{
+		{origo[0], origo[1], origo[2]},
+		{origo[0] + size, origo[1], origo[2]},
+		{origo[0] + size, origo[1], origo[2] + size},
+		{origo[0], origo[1], origo[2] + size},
+		{origo[0], origo[1] + size, origo[2] + size},
+		{origo[0] + size, origo[1] + size, origo[2] + size},
+		{origo[0] + size, origo[1] + size, origo[2]},
+		{origo[0], origo[1] + size, origo[2]},
+	}
+
+	status := 0 // 0 inside, 1 partly, 2 outside
+	for t := range cam.Planes {
+		in, out := 0, 0
+
+		for u := range corners {
+			if cam.Planes[t].ClassifyPoint(corners[u]) < 0.0 {
+				out++
+			} else {
+				in++
+			}
+		}
+
+		if in == 0 {
+			status = 2
+		} else if out > 0 {
+			status = 1
+		}
+	}
+
+	/*if status == 2 {
+		fmt.Println("not in view")
+	} else if status == 1 {
+		fmt.Println("partly in view")
+	} else {
+		fmt.Println("in view")
+	}*/
+
+	return status
+}
+
+func (plane *Plane) Normalize() {
+	magnitude := math.Sqrt((plane.A * plane.A) + (plane.B * plane.B) + (plane.C * plane.C) + (plane.D * plane.D))
+
+	plane.A /= magnitude
+	plane.B /= magnitude
+	plane.C /= magnitude
+	plane.D /= magnitude
+}
+
+func (plane *Plane) ClassifyPoint(vector [3]float64) float64 {
+	return (plane.A * vector[0]) + (plane.B * vector[1]) + (plane.C * vector[2]) + plane.D
 }
 
 var cam = Camera{X: 8.0, Y: 8.0, Z: 16.0, Rx: 0.0, Ry: 0.0, Rz: 0.0}
@@ -76,13 +181,14 @@ func main() {
 	cam.ProjectionMatrix = matrix.NewPerspectiveMatrix(53.13, 640.0/480.0, 0.1, 1000.0)
 	cam.updateViewMatrix()
 	cam.updatePVMatrix()
+	cam.updateFrustum()
 
 	var vao gl.Uint
 	gl.GenVertexArrays(1, &vao)
 	gl.BindVertexArray(vao)
 
-	singleChunk := chunk.NewPyramidChunk()
-	fmt.Println(singleChunk)
+	singleChunk := chunk.NewPyramidChunk(false)
+	singleChunk2 := chunk.NewPyramidChunk(true)
 
 	program := readShaders()
 
@@ -100,6 +206,9 @@ func main() {
 	maxHeight := gl.GLString("maxHeight")
 	maxHeightId := gl.GetUniformLocation(program, maxHeight)
 	gl.GLStringFree(maxHeight)
+	chunkHeight := gl.GLString("chunkHeight")
+	chunkHeightId := gl.GetUniformLocation(program, chunkHeight)
+	gl.GLStringFree(chunkHeight)
 
 	camCh := make(chan bool)
 	go logicLoop(camCh, &cam)
@@ -121,12 +230,38 @@ func main() {
 		gl.UseProgram(program)
 		gl.UniformMatrix4fv(pvId, 1, gl.FALSE, &glPVMatrix[0])
 
-		modelMatrix := matrix.NewIdentityMatrix()
-		modelMatrix.Translate(0.0, 0.0, 0.0)
-		glModelMatrix := matrixToGL(modelMatrix)
-		gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
-		gl.Uniform1f(maxHeightId, gl.Float(chunk.CHUNK_BASE/2))
-		singleChunk.RenderChunk(normalId)
+		for z := 0; z < 10; z++ {
+			for x := 0; x < 10; x++ {
+				posx := float64(x * chunk.CHUNK_BASE)
+				posz := float64(-z * chunk.CHUNK_BASE)
+				if cam.CubeInView([3]float64{posx, 0.0, posz}, float64(chunk.CHUNK_BASE)) != 2 {
+					modelMatrix := matrix.NewIdentityMatrix()
+					modelMatrix.Translate(posx, 0.0, posz)
+					glModelMatrix := matrixToGL(modelMatrix)
+					gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
+					gl.Uniform1f(maxHeightId, gl.Float(chunk.CHUNK_BASE))
+					gl.Uniform1f(chunkHeightId, 0.0)
+
+					singleChunk.RenderChunk(normalId)
+				}
+			}
+		}
+		for z := 0; z < 10; z++ {
+			for x := 0; x < 10; x++ {
+				posx := float64(x * chunk.CHUNK_BASE)
+				posz := float64(-z * chunk.CHUNK_BASE)
+				if cam.CubeInView([3]float64{posx, 7.0, posz}, float64(chunk.CHUNK_BASE)) != 2 {
+					modelMatrix := matrix.NewIdentityMatrix()
+					modelMatrix.Translate(posx, 7.0, posz)
+					glModelMatrix := matrixToGL(modelMatrix)
+					gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
+					gl.Uniform1f(maxHeightId, gl.Float(chunk.CHUNK_BASE))
+					gl.Uniform1f(chunkHeightId, 7.0)
+
+					singleChunk2.RenderChunk(normalId)
+				}
+			}
+		}
 
 		if err := gl.GetError(); err != 0 {
 			fmt.Printf("Err: %d\n", err)
@@ -215,6 +350,10 @@ func logicLoop(camCh chan<- bool, cam *Camera) {
 					cam.X -= xMove
 					cam.Z -= zMove
 					update = true
+				}
+
+				if glfw.Key('F') == glfw.KeyPress {
+					cam.updateFrustum()
 				}
 			}
 			remainder = math.Max(elapsedTick, 0.0)
