@@ -16,8 +16,9 @@ import (
 )
 
 type Camera struct {
-	X, Y, Z    float64
-	Rx, Ry, Rz float64
+	X, Y, Z             float64
+	Rx, Ry, Rz          float64
+	CullX, CullY, CullZ float64
 
 	ViewMatrix       *matrix.Matrix
 	ProjectionMatrix *matrix.Matrix
@@ -242,7 +243,7 @@ func main() {
 					gl.Uniform1f(maxHeightId, gl.Float(chunk.CHUNK_BASE))
 					gl.Uniform1f(chunkHeightId, 0.0)
 
-					singleChunk.RenderChunk(normalId)
+					singleChunk.RenderChunk(normalId, [3]float64{cam.CullX, cam.CullY, cam.CullZ}, [3]float64{posx, 0.0, posz}, modelMatrix)
 				}
 			}
 		}
@@ -258,7 +259,7 @@ func main() {
 					gl.Uniform1f(maxHeightId, gl.Float(chunk.CHUNK_BASE))
 					gl.Uniform1f(chunkHeightId, 7.0)
 
-					singleChunk2.RenderChunk(normalId)
+					singleChunk2.RenderChunk(normalId, [3]float64{cam.CullX, cam.CullY, cam.CullZ}, [3]float64{posx, 7.0, posz}, modelMatrix)
 				}
 			}
 		}
@@ -354,6 +355,11 @@ func logicLoop(camCh chan<- bool, cam *Camera) {
 
 				if glfw.Key('F') == glfw.KeyPress {
 					cam.updateFrustum()
+				}
+				if glfw.Key('C') == glfw.KeyPress {
+					cam.CullX = cam.X
+					cam.CullY = cam.Y
+					cam.CullZ = cam.Z
 				}
 			}
 			remainder = math.Max(elapsedTick, 0.0)
