@@ -8,6 +8,7 @@ import (
 	"math"
 	"runtime"
 	"time"
+	"unsafe"
 )
 
 import (
@@ -19,6 +20,8 @@ type Camera struct {
 	X, Y, Z             float64
 	Rx, Ry, Rz          float64
 	CullX, CullY, CullZ float64
+	Fx, Fy, Fz          float64
+	Frx, Fry, Frz       float64
 
 	ViewMatrix       *matrix.Matrix
 	ProjectionMatrix *matrix.Matrix
@@ -87,6 +90,13 @@ func (cam *Camera) updateFrustum() {
 	/*for t := range cam.Planes {
 		cam.Planes[t].Normalize()
 	}*/
+
+	cam.Fx = cam.X
+	cam.Fy = cam.Y
+	cam.Fz = cam.Z
+	cam.Frx = cam.Rx
+	cam.Fry = cam.Ry
+	cam.Frz = cam.Rz
 }
 
 func (cam *Camera) CubeInView(origo [3]float64, size float64) int {
@@ -114,19 +124,11 @@ func (cam *Camera) CubeInView(origo [3]float64, size float64) int {
 		}
 
 		if in == 0 {
-			status = 2
+			return 2
 		} else if out > 0 {
 			status = 1
 		}
 	}
-
-	/*if status == 2 {
-		fmt.Println("not in view")
-	} else if status == 1 {
-		fmt.Println("partly in view")
-	} else {
-		fmt.Println("in view")
-	}*/
 
 	return status
 }
@@ -211,6 +213,8 @@ func main() {
 	chunkHeightId := gl.GetUniformLocation(program, chunkHeight)
 	gl.GLStringFree(chunkHeight)
 
+	frustumBuffer := createFrustumMesh(&cam)
+
 	camCh := make(chan bool)
 	go logicLoop(camCh, &cam)
 
@@ -264,6 +268,14 @@ func main() {
 			}
 		}
 
+		modelMatrix := matrix.NewIdentityMatrix()
+		modelMatrix.Translate(cam.Fx, cam.Fy, cam.Fz)
+		modelMatrix.RotateY(cam.Fry)
+		modelMatrix.RotateX(cam.Frx)
+		glModelMatrix := matrixToGL(modelMatrix)
+		gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
+		renderFrustumMesh(&cam, frustumBuffer)
+
 		if err := gl.GetError(); err != 0 {
 			fmt.Printf("Err: %d\n", err)
 			break
@@ -279,6 +291,79 @@ func main() {
 			currentTick = newTick
 		}
 	}
+}
+
+func createFrustumMesh(cam *Camera) gl.Uint {
+	var buffer gl.Uint
+	sizeFloat := int(unsafe.Sizeof([1]float32{}))
+
+	fmt.Println(cam.ProjectionMatrix)
+	proj := cam.ProjectionMatrix.Values
+	near := proj[11] / (proj[10] - 1.0)
+	far := 100.0 //proj[11] / (1.0 + proj[10])
+	nLeft := float32(near * (proj[2] - 1.0) / proj[0])
+	nRight := float32(near * (1.0 + proj[2]) / proj[0])
+	nTop := float32(near * (1.0 + proj[6]) / proj[5])
+	nBottom := float32(near * (proj[6] - 1.0) / proj[5])
+	fLeft := float32(far * (proj[2] - 1.0) / proj[0])
+	fRight := float32(far * (1.0 + proj[2]) / proj[0])
+	fTop := float32(far * (1.0 + proj[6]) / proj[5])
+	fBottom := float32(far * (proj[6] - 1.0) / proj[5])
+
+	vertices := [...]float32{
+		0.0, 0.0, 0.0,
+		fLeft, fBottom, float32(-far),
+
+		0.0, 0.0, 0.0,
+		fRight, fBottom, float32(-far),
+
+		0.0, 0.0, 0.0,
+		fRight, fTop, float32(-far),
+
+		0.0, 0.0, 0.0,
+		fLeft, fTop, float32(-far),
+
+		fLeft, fBottom, float32(-far),
+		fRight, fBottom, float32(-far),
+
+		fRight, fTop, float32(-far),
+		fLeft, fTop, float32(-far),
+
+		fRight, fTop, float32(-far),
+		fRight, fBottom, float32(-far),
+
+		fLeft, fTop, float32(-far),
+		fLeft, fBottom, float32(-far),
+
+		nLeft, nBottom, float32(-near),
+		nRight, nBottom, float32(-near),
+
+		nRight, nTop, float32(-near),
+		nLeft, nTop, float32(-near),
+
+		nLeft, nTop, float32(-near),
+		nLeft, nBottom, float32(-near),
+
+		nRight, nTop, float32(-near),
+		nRight, nBottom, float32(-near),
+	}
+
+	gl.GenBuffers(1, &buffer)
+	gl.BindBuffer(gl.ARRAY_BUFFER, buffer)
+	gl.BufferData(gl.ARRAY_BUFFER, gl.Sizeiptr(sizeFloat*len(vertices)), gl.Pointer(&vertices[0]), gl.STATIC_DRAW)
+
+	gl.BindBuffer(gl.ARRAY_BUFFER, buffer)
+	gl.EnableVertexAttribArray(0)
+	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
+	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
+
+	return buffer
+}
+
+func renderFrustumMesh(cam *Camera, meshBuffer gl.Uint) {
+	gl.BindBuffer(gl.ARRAY_BUFFER, meshBuffer)
+	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
+	gl.DrawArrays(gl.LINES, 0, 24)
 }
 
 func logicLoop(camCh chan<- bool, cam *Camera) {
@@ -443,4 +528,17 @@ func matrixToGL(matrix *matrix.Matrix) [16]gl.Float {
 	}
 
 	return newMatrix
+}
+
+func multiplyMatrixVector(matrix *matrix.Matrix, vector [4]float64) [4]float64 {
+	values := [4]float64{0.0, 0.0, 0.0}
+
+	for y := 0; y < 4; y++ {
+		for x := 0; x < 4; x++ {
+			i := (y * 4) + x
+			values[y] += matrix.Values[i] * vector[x]
+		}
+	}
+
+	return values
 }
