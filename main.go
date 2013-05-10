@@ -190,8 +190,15 @@ func main() {
 	gl.GenVertexArrays(1, &vao)
 	gl.BindVertexArray(vao)
 
-	singleChunk := chunk.NewPyramidChunk(false)
-	singleChunk2 := chunk.NewPyramidChunk(true)
+	cubed := 4
+	chunks := map[chunk.ChunkCoord]*chunk.Chunk{}
+	for x := 0; x < cubed; x++ {
+		for z := 0; z < cubed; z++ {
+			for y := 0; y < cubed; y++ {
+				chunks[chunk.ChunkCoord{x, y, z}] = chunk.NewCubeChunk()
+			}
+		}
+	}
 
 	program := readShaders()
 
@@ -235,36 +242,19 @@ func main() {
 		gl.UseProgram(program)
 		gl.UniformMatrix4fv(pvId, 1, gl.FALSE, &glPVMatrix[0])
 
-		for z := 0; z < 10; z++ {
-			for x := 0; x < 10; x++ {
-				posx := float64(x * chunk.CHUNK_BASE)
-				posz := float64(-z * chunk.CHUNK_BASE)
-				if cam.CubeInView([3]float64{posx, 0.0, posz}, float64(chunk.CHUNK_BASE)) != 2 {
-					modelMatrix := matrix.NewIdentityMatrix()
-					modelMatrix.Translate(posx, 0.0, posz)
-					glModelMatrix := matrixToGL(modelMatrix)
-					gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
-					gl.Uniform1f(maxHeightId, gl.Float(chunk.CHUNK_BASE))
-					gl.Uniform1f(chunkHeightId, 0.0)
+		for pos, chnk := range chunks {
+			posx := float64(pos.X * chunk.CHUNK_BASE)
+			posy := float64(pos.Y * chunk.CHUNK_BASE)
+			posz := float64(pos.Z * chunk.CHUNK_BASE)
+			if cam.CubeInView([3]float64{posx, posy, posz}, float64(chunk.CHUNK_BASE)) != 2 {
+				modelMatrix := matrix.NewIdentityMatrix()
+				modelMatrix.Translate(posx, posy, posz)
+				glModelMatrix := matrixToGL(modelMatrix)
+				gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
+				gl.Uniform1f(maxHeightId, gl.Float(chunk.CHUNK_BASE*cubed))
+				gl.Uniform1f(chunkHeightId, gl.Float(posy))
 
-					singleChunk.RenderChunk(normalId, [3]float64{cam.CullX, cam.CullY, cam.CullZ}, [3]float64{posx, 0.0, posz}, modelMatrix)
-				}
-			}
-		}
-		for z := 0; z < 10; z++ {
-			for x := 0; x < 10; x++ {
-				posx := float64(x * chunk.CHUNK_BASE)
-				posz := float64(-z * chunk.CHUNK_BASE)
-				if cam.CubeInView([3]float64{posx, 7.0, posz}, float64(chunk.CHUNK_BASE)) != 2 {
-					modelMatrix := matrix.NewIdentityMatrix()
-					modelMatrix.Translate(posx, 7.0, posz)
-					glModelMatrix := matrixToGL(modelMatrix)
-					gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
-					gl.Uniform1f(maxHeightId, gl.Float(chunk.CHUNK_BASE))
-					gl.Uniform1f(chunkHeightId, 7.0)
-
-					singleChunk2.RenderChunk(normalId, [3]float64{cam.CullX, cam.CullY, cam.CullZ}, [3]float64{posx, 7.0, posz}, modelMatrix)
-				}
+				chnk.RenderChunk(normalId, [3]float64{cam.CullX, cam.CullY, cam.CullZ}, [3]float64{posx, 0.0, posz}, modelMatrix)
 			}
 		}
 

@@ -3,7 +3,7 @@ package chunk
 const CHUNK_BASE int = 16
 
 type ChunkCoord struct {
-	x, y, z int
+	X, Y, Z int
 }
 
 type Chunk struct {
@@ -14,26 +14,33 @@ type Chunk struct {
 type Block struct {
 }
 
-func NewPyramidChunk(inverted bool) *Chunk {
+func NewPyramidChunk() *Chunk {
 	chunk := &Chunk{}
 
 	chunk.data = map[ChunkCoord]Block{}
-	if !inverted {
-		for y := 0; y < CHUNK_BASE/2; y++ {
-			for x := y; x < CHUNK_BASE-y; x++ {
-				for z := y; z < CHUNK_BASE-y; z++ {
-					index := ChunkCoord{x: x, y: y, z: z}
-					chunk.data[index] = Block{}
-				}
+	for y := 0; y < CHUNK_BASE/2; y++ {
+		for x := y; x < CHUNK_BASE-y; x++ {
+			for z := y; z < CHUNK_BASE-y; z++ {
+				index := ChunkCoord{x, y, z}
+				chunk.data[index] = Block{}
 			}
 		}
-	} else {
-		for y := 0; y < CHUNK_BASE/2; y++ {
-			for x := y; x < CHUNK_BASE-y; x++ {
-				for z := y; z < CHUNK_BASE-y; z++ {
-					index := ChunkCoord{x: x, y: (CHUNK_BASE / 2) - y, z: z}
-					chunk.data[index] = Block{}
-				}
+	}
+
+	chunk.UpdateChunkMesh()
+
+	return chunk
+}
+
+func NewCubeChunk() *Chunk {
+	chunk := &Chunk{}
+
+	chunk.data = map[ChunkCoord]Block{}
+	for y := 0; y < CHUNK_BASE; y++ {
+		for x := 0; x < CHUNK_BASE; x++ {
+			for z := 0; z < CHUNK_BASE; z++ {
+				index := ChunkCoord{x, y, z}
+				chunk.data[index] = Block{}
 			}
 		}
 	}

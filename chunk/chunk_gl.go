@@ -119,26 +119,26 @@ func createMeshBuffer(faceBuffer *[]float32, size int) gl.Uint {
 func (chunk *Chunk) UpdateChunkMesh() {
 	vertexBuffers := [6][]float32{}
 	for pos := range chunk.data {
-		x := float32(pos.x)
-		y := float32(pos.y)
-		z := float32(pos.z)
+		x := float32(pos.X)
+		y := float32(pos.Y)
+		z := float32(pos.Z)
 
-		if _, ok := chunk.data[ChunkCoord{pos.x, pos.y, pos.z + 1}]; !ok {
+		if _, ok := chunk.data[ChunkCoord{pos.X, pos.Y, pos.Z + 1}]; !ok {
 			appendChunkFace(&vertexBuffers[FRONT], x, y, z, FRONT)
 		}
-		if _, ok := chunk.data[ChunkCoord{pos.x, pos.y, pos.z - 1}]; !ok {
+		if _, ok := chunk.data[ChunkCoord{pos.X, pos.Y, pos.Z - 1}]; !ok {
 			appendChunkFace(&vertexBuffers[BACK], x, y, z, BACK)
 		}
-		if _, ok := chunk.data[ChunkCoord{pos.x - 1, pos.y, pos.z}]; !ok {
+		if _, ok := chunk.data[ChunkCoord{pos.X - 1, pos.Y, pos.Z}]; !ok {
 			appendChunkFace(&vertexBuffers[LEFT], x, y, z, LEFT)
 		}
-		if _, ok := chunk.data[ChunkCoord{pos.x + 1, pos.y, pos.z}]; !ok {
+		if _, ok := chunk.data[ChunkCoord{pos.X + 1, pos.Y, pos.Z}]; !ok {
 			appendChunkFace(&vertexBuffers[RIGHT], x, y, z, RIGHT)
 		}
-		if _, ok := chunk.data[ChunkCoord{pos.x, pos.y + 1, pos.z}]; !ok {
+		if _, ok := chunk.data[ChunkCoord{pos.X, pos.Y + 1, pos.Z}]; !ok {
 			appendChunkFace(&vertexBuffers[TOP], x, y, z, TOP)
 		}
-		if _, ok := chunk.data[ChunkCoord{pos.x, pos.y - 1, pos.z}]; !ok {
+		if _, ok := chunk.data[ChunkCoord{pos.X, pos.Y - 1, pos.Z}]; !ok {
 			appendChunkFace(&vertexBuffers[BOTTOM], x, y, z, BOTTOM)
 		}
 	}
