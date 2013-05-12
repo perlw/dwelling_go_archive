@@ -4,6 +4,8 @@ import (
 	"dwelling/camera"
 	"dwelling/math/vector"
 	"fmt"
+	"math/rand"
+	"time"
 )
 
 const CHUNK_BASE int = 16
@@ -27,7 +29,7 @@ type Block struct {
 }
 
 var chunkMap = map[ChunkCoord]*Chunk{}
-var setupChunks = map[ChunkCoord]*Chunk{}
+var rebuildChunks = map[ChunkCoord]*Chunk{}
 var visibleChunks = map[ChunkCoord]*Chunk{}
 var renderChunks = map[ChunkCoord]*Chunk{}
 
@@ -37,6 +39,8 @@ var camView = vector.Vector3f{0.0, 0.0, -1.0}
 var debugMode = false
 
 func Start() {
+	rand.Seed(time.Now().Unix())
+
 	cubed := 4
 	for x := 0; x < cubed; x++ {
 		for z := 0; z < cubed; z++ {
@@ -49,6 +53,32 @@ func Start() {
 
 func SetDebug(mode bool) {
 	debugMode = mode
+}
+
+func DebugDeleteRandomBlock() {
+	deleted := false
+
+	for !deleted {
+		cx := rand.Intn(4)
+		cy := rand.Intn(4)
+		cz := rand.Intn(4)
+
+		if chunk, ok := chunkMap[ChunkCoord{cx, cy, cz}]; ok {
+			x := rand.Intn(16)
+			y := rand.Intn(16)
+			z := rand.Intn(16)
+
+			if _, ok := chunk.data[BlockCoord{x, y, z}]; ok {
+				fmt.Printf("Deleted block at [%d,%d,%d]:[%d,%d,%d]\n", cx, cy, cz, x, y, z)
+
+				delete(chunk.data, BlockCoord{x, y, z})
+				rebuildChunks[ChunkCoord{cx, cy, cz}] = chunk
+
+				deleted = true
+			}
+		}
+	}
+
 }
 
 func GetChunksAroundChunk(chunkPos ChunkCoord) [6]*Chunk {
@@ -78,6 +108,7 @@ func GetChunksAroundChunk(chunkPos ChunkCoord) [6]*Chunk {
 
 func Update(cam *camera.Camera) {
 	updateSetupList()
+	updateRebuildList()
 	updateVisibilityList(cam)
 
 	if camPos != cam.Pos || camView != cam.Rot {
@@ -94,6 +125,14 @@ func updateSetupList() {
 			chnk.UpdateChunkMesh(pos)
 		}
 	}
+}
+
+func updateRebuildList() {
+	for pos, chnk := range rebuildChunks {
+		chnk.UpdateChunkMesh(pos)
+	}
+
+	rebuildChunks = map[ChunkCoord]*Chunk{}
 }
 
 func updateVisibilityList(cam *camera.Camera) {

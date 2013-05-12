@@ -40,7 +40,5 @@ func Render(program gl.Uint, cam *camera.Camera) {
 
 			chnk.RenderChunk(normalId, cam.CullPos, modelMatrix, true)
 		}
-
 	}
-
 }

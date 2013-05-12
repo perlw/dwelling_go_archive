@@ -79,7 +79,8 @@ func main() {
 	camCh := make(chan bool)
 	debugCh := make(chan bool)
 	logicCh := make(chan bool)
-	go logicLoop(camCh, debugCh, logicCh, &cam)
+	delCh := make(chan bool)
+	go logicLoop(camCh, debugCh, logicCh, delCh, &cam)
 
 	gl.ClearColor(0.5, 0.5, 1.0, 1.0)
 	currentTick := time.Now().UnixNano() / 1000000.0
@@ -100,6 +101,8 @@ func main() {
 			}
 		case <-logicCh:
 			chunkmanager.Update(&cam)
+		case <-delCh:
+			chunkmanager.DebugDeleteRandomBlock()
 		default:
 		}
 
@@ -140,13 +143,14 @@ func main() {
 	}
 }
 
-func logicLoop(camCh chan<- bool, debugCh chan<- bool, logicCh chan<- bool, cam *camera.Camera) {
+func logicLoop(camCh chan<- bool, debugCh chan<- bool, logicCh chan<- bool, delCh chan<- bool, cam *camera.Camera) {
 	currentTick := time.Now().UnixNano() / 1000000.0
 
 	rotSpeed := 1.0
 	camSpeed := 0.25
 
 	keyF1Held := false
+	keyDelHeld := false
 	debugMode := false
 
 	remainder := 0.0
@@ -227,13 +231,23 @@ func logicLoop(camCh chan<- bool, debugCh chan<- bool, logicCh chan<- bool, cam 
 					update = true
 				}
 
-				if glfw.Key('F') == glfw.KeyPress {
-					cam.UpdateFrustum()
-				}
-				if glfw.Key('C') == glfw.KeyPress {
-					cam.CullPos.X = cam.Pos.X
-					cam.CullPos.Y = cam.Pos.Y
-					cam.CullPos.Z = cam.Pos.Z
+				if debugMode {
+					if !keyDelHeld && glfw.Key(glfw.KeyDel) == glfw.KeyPress {
+						keyDelHeld = true
+					}
+					if keyDelHeld && glfw.Key(glfw.KeyDel) == glfw.KeyRelease {
+						keyDelHeld = false
+						delCh <- true
+					}
+
+					if glfw.Key('F') == glfw.KeyPress {
+						cam.UpdateFrustum()
+					}
+					if glfw.Key('C') == glfw.KeyPress {
+						cam.CullPos.X = cam.Pos.X
+						cam.CullPos.Y = cam.Pos.Y
+						cam.CullPos.Z = cam.Pos.Z
+					}
 				}
 			}
 			remainder = math.Max(elapsedTick, 0.0)
