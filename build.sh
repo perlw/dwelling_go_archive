@@ -39,7 +39,7 @@ function build {
 }
 
 function tests {
-    go test dwelling/matrix
+    go test dwelling/math/matrix
 }
 
 function run {

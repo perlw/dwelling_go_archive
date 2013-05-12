@@ -7,7 +7,7 @@ import (
 )
 
 import (
-	"dwelling/matrix"
+	"dwelling/math/matrix"
 )
 
 const (
