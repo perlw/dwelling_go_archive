@@ -22,6 +22,10 @@ type Vector4f struct {
 	X, Y, Z, W float64
 }
 
+func DotProduct(v1, v2 Vector3f) float64 {
+	return (v1.X * v2.X) + (v1.Y * v2.Y) + (v1.Z * v2.Z)
+}
+
 // Vector2i
 func (v Vector2i) Add(v2 Vector2i) Vector2i {
 	return Vector2i{v.X + v2.X, v.Y + v2.Y}

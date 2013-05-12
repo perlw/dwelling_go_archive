@@ -1,13 +1,11 @@
 package chunk
 
 import (
+	"dwelling/math/matrix"
+	"dwelling/math/vector"
 	"fmt"
 	gl "github.com/chsc/gogl/gl33"
 	"unsafe"
-)
-
-import (
-	"dwelling/math/matrix"
 )
 
 const (
@@ -19,7 +17,7 @@ const (
 	BOTTOM
 )
 
-var chunkNormals = [][3]gl.Float{
+var chunkNormals = [6]vector.Vector3f{
 	{0.0, 0.0, 1.0},
 	{0.0, 0.0, -1.0},
 	{-1.0, 0.0, 0.0},
@@ -158,15 +156,14 @@ func (chunk *Chunk) UpdateChunkMesh() {
 	fmt.Printf("%d faces vs %d total, saved %d\n", numFaces, worstCaseFaces, worstCaseFaces-numFaces)
 }
 
-func (chunk *Chunk) RenderChunk(normalId gl.Int, cam [3]float64, pos [3]float64, world *matrix.Matrix) {
-	facePos := multiplyMatrixVector4(world, [4]float64{float64(CHUNK_BASE) / 2, 0.0, float64(CHUNK_BASE) / 2, 1.0})
+func (chunk *Chunk) RenderChunk(normalId gl.Int, cam vector.Vector3f, world *matrix.Matrix) {
+	facePos := matrix.MultiplyVector3f(world, vector.Vector3f{float64(CHUNK_BASE) / 2, 0.0, float64(CHUNK_BASE) / 2})
 
 	if chunk.mesh.numVertices[FRONT] > 0 {
-		chunkNormal := chunkNormals[FRONT]
-		normal := [3]float64{float64(chunkNormal[0]), float64(chunkNormal[1]), float64(chunkNormal[2])}
-		normal = multiplyMatrixVector(world, normal)
-		camDir := [3]float64{cam[0] - facePos[0], cam[1] - facePos[1], cam[2] - facePos[2]}
-		dot := dotProduct(camDir, normal)
+		normal := chunkNormals[FRONT]
+		normal = matrix.MultiplyVector3f(world, normal)
+		camDir := cam.Sub(facePos)
+		dot := vector.DotProduct(camDir, normal)
 
 		if dot > 0.0 {
 			chunk.renderMeshBuffer(FRONT, normalId)
@@ -174,11 +171,10 @@ func (chunk *Chunk) RenderChunk(normalId gl.Int, cam [3]float64, pos [3]float64,
 	}
 
 	if chunk.mesh.numVertices[BACK] > 0 {
-		chunkNormal := chunkNormals[BACK]
-		normal := [3]float64{float64(chunkNormal[0]), float64(chunkNormal[1]), float64(chunkNormal[2])}
-		normal = multiplyMatrixVector(world, normal)
-		camDir := [3]float64{cam[0] - facePos[0], cam[1] - facePos[1], cam[2] - facePos[2]}
-		dot := dotProduct(camDir, normal)
+		normal := chunkNormals[BACK]
+		normal = matrix.MultiplyVector3f(world, normal)
+		camDir := cam.Sub(facePos)
+		dot := vector.DotProduct(camDir, normal)
 
 		if dot > 0.0 {
 			chunk.renderMeshBuffer(BACK, normalId)
@@ -186,11 +182,10 @@ func (chunk *Chunk) RenderChunk(normalId gl.Int, cam [3]float64, pos [3]float64,
 	}
 
 	if chunk.mesh.numVertices[LEFT] > 0 {
-		chunkNormal := chunkNormals[LEFT]
-		normal := [3]float64{float64(chunkNormal[0]), float64(chunkNormal[1]), float64(chunkNormal[2])}
-		normal = multiplyMatrixVector(world, normal)
-		camDir := [3]float64{cam[0] - facePos[0], cam[1] - facePos[1], cam[2] - facePos[2]}
-		dot := dotProduct(camDir, normal)
+		normal := chunkNormals[LEFT]
+		normal = matrix.MultiplyVector3f(world, normal)
+		camDir := cam.Sub(facePos)
+		dot := vector.DotProduct(camDir, normal)
 
 		if dot > 0.0 {
 			chunk.renderMeshBuffer(LEFT, normalId)
@@ -198,11 +193,10 @@ func (chunk *Chunk) RenderChunk(normalId gl.Int, cam [3]float64, pos [3]float64,
 	}
 
 	if chunk.mesh.numVertices[RIGHT] > 0 {
-		chunkNormal := chunkNormals[RIGHT]
-		normal := [3]float64{float64(chunkNormal[0]), float64(chunkNormal[1]), float64(chunkNormal[2])}
-		normal = multiplyMatrixVector(world, normal)
-		camDir := [3]float64{cam[0] - facePos[0], cam[1] - facePos[1], cam[2] - facePos[2]}
-		dot := dotProduct(camDir, normal)
+		normal := chunkNormals[RIGHT]
+		normal = matrix.MultiplyVector3f(world, normal)
+		camDir := cam.Sub(facePos)
+		dot := vector.DotProduct(camDir, normal)
 
 		if dot > 0.0 {
 			chunk.renderMeshBuffer(RIGHT, normalId)
@@ -210,47 +204,32 @@ func (chunk *Chunk) RenderChunk(normalId gl.Int, cam [3]float64, pos [3]float64,
 	}
 
 	if chunk.mesh.numVertices[TOP] > 0 {
-		chunk.renderMeshBuffer(TOP, normalId)
+		normal := chunkNormals[TOP]
+		normal = matrix.MultiplyVector3f(world, normal)
+		camDir := cam.Sub(facePos)
+		dot := vector.DotProduct(camDir, normal)
+
+		if dot > 0.0 {
+			chunk.renderMeshBuffer(TOP, normalId)
+		}
 	}
 
 	if chunk.mesh.numVertices[BOTTOM] > 0 {
-		chunk.renderMeshBuffer(BOTTOM, normalId)
+		normal := chunkNormals[BOTTOM]
+		normal = matrix.MultiplyVector3f(world, normal)
+		camDir := cam.Sub(facePos)
+		dot := vector.DotProduct(camDir, normal)
+
+		if dot > 0.0 {
+			chunk.renderMeshBuffer(BOTTOM, normalId)
+		}
 	}
 }
 
 func (chunk *Chunk) renderMeshBuffer(side int, normalId gl.Int) {
-	gl.Uniform3fv(normalId, 1, &chunkNormals[side][0])
+	normal := chunkNormals[side].ToGL()
+	gl.Uniform3fv(normalId, 1, &normal[0])
 	gl.BindBuffer(gl.ARRAY_BUFFER, chunk.mesh.vertexBufferIds[side])
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
 	gl.DrawArrays(gl.TRIANGLES, 0, chunk.mesh.numVertices[side])
-}
-
-func multiplyMatrixVector(matrix *matrix.Matrix, vector [3]float64) [3]float64 {
-	values := [3]float64{0.0, 0.0, 0.0}
-
-	for y := 0; y < 3; y++ {
-		for x := 0; x < 3; x++ {
-			i := (y * 4) + x
-			values[y] += matrix.Values[i] * vector[x]
-		}
-	}
-
-	return values
-}
-
-func multiplyMatrixVector4(matrix *matrix.Matrix, vector [4]float64) [4]float64 {
-	values := [4]float64{0.0, 0.0, 0.0, 0.0}
-
-	for y := 0; y < 4; y++ {
-		for x := 0; x < 4; x++ {
-			i := (y * 4) + x
-			values[y] += matrix.Values[i] * vector[x]
-		}
-	}
-
-	return values
-}
-
-func dotProduct(v1, v2 [3]float64) float64 {
-	return (v1[0] * v2[0]) + (v1[1] * v2[1]) + (v1[2] * v2[2])
 }

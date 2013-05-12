@@ -122,7 +122,7 @@ func main() {
 				gl.Uniform1f(maxHeightId, gl.Float(chunk.CHUNK_BASE*cubed))
 				gl.Uniform1f(chunkHeightId, gl.Float(posy))
 
-				chnk.RenderChunk(normalId, [3]float64{cam.CullPos.X, cam.CullPos.Y, cam.CullPos.Z}, [3]float64{posx, posy, posz}, modelMatrix)
+				chnk.RenderChunk(normalId, cam.CullPos, modelMatrix)
 			}
 		}
 
