@@ -121,22 +121,22 @@ func (chunk *Chunk) UpdateChunkMesh() {
 		y := float32(pos.Y)
 		z := float32(pos.Z)
 
-		if _, ok := chunk.data[ChunkCoord{pos.X, pos.Y, pos.Z + 1}]; !ok {
+		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y, pos.Z + 1}]; !ok {
 			appendChunkFace(&vertexBuffers[FRONT], x, y, z, FRONT)
 		}
-		if _, ok := chunk.data[ChunkCoord{pos.X, pos.Y, pos.Z - 1}]; !ok {
+		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y, pos.Z - 1}]; !ok {
 			appendChunkFace(&vertexBuffers[BACK], x, y, z, BACK)
 		}
-		if _, ok := chunk.data[ChunkCoord{pos.X - 1, pos.Y, pos.Z}]; !ok {
+		if _, ok := chunk.data[BlockCoord{pos.X - 1, pos.Y, pos.Z}]; !ok {
 			appendChunkFace(&vertexBuffers[LEFT], x, y, z, LEFT)
 		}
-		if _, ok := chunk.data[ChunkCoord{pos.X + 1, pos.Y, pos.Z}]; !ok {
+		if _, ok := chunk.data[BlockCoord{pos.X + 1, pos.Y, pos.Z}]; !ok {
 			appendChunkFace(&vertexBuffers[RIGHT], x, y, z, RIGHT)
 		}
-		if _, ok := chunk.data[ChunkCoord{pos.X, pos.Y + 1, pos.Z}]; !ok {
+		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y + 1, pos.Z}]; !ok {
 			appendChunkFace(&vertexBuffers[TOP], x, y, z, TOP)
 		}
-		if _, ok := chunk.data[ChunkCoord{pos.X, pos.Y - 1, pos.Z}]; !ok {
+		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y - 1, pos.Z}]; !ok {
 			appendChunkFace(&vertexBuffers[BOTTOM], x, y, z, BOTTOM)
 		}
 	}
@@ -206,23 +206,13 @@ func (chunk *Chunk) RenderChunk(normalId gl.Int, cam vector.Vector3f, world *mat
 	if chunk.mesh.numVertices[TOP] > 0 {
 		normal := chunkNormals[TOP]
 		normal = matrix.MultiplyVector3f(world, normal)
-		camDir := cam.Sub(facePos)
-		dot := vector.DotProduct(camDir, normal)
-
-		if dot > 0.0 {
-			chunk.renderMeshBuffer(TOP, normalId)
-		}
+		chunk.renderMeshBuffer(TOP, normalId)
 	}
 
 	if chunk.mesh.numVertices[BOTTOM] > 0 {
 		normal := chunkNormals[BOTTOM]
 		normal = matrix.MultiplyVector3f(world, normal)
-		camDir := cam.Sub(facePos)
-		dot := vector.DotProduct(camDir, normal)
-
-		if dot > 0.0 {
-			chunk.renderMeshBuffer(BOTTOM, normalId)
-		}
+		chunk.renderMeshBuffer(BOTTOM, normalId)
 	}
 }
 

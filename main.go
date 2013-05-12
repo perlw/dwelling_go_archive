@@ -2,7 +2,7 @@ package main
 
 import (
 	"dwelling/camera"
-	"dwelling/chunk"
+	"dwelling/chunkmanager"
 	"dwelling/math/matrix"
 	"dwelling/math/vector"
 	"fmt"
@@ -58,15 +58,7 @@ func main() {
 	gl.GenVertexArrays(1, &vao)
 	gl.BindVertexArray(vao)
 
-	cubed := 4
-	chunks := map[chunk.ChunkCoord]*chunk.Chunk{}
-	for x := 0; x < cubed; x++ {
-		for z := 0; z < cubed; z++ {
-			for y := 0; y < cubed; y++ {
-				chunks[chunk.ChunkCoord{x, y, z}] = chunk.NewCubeChunk()
-			}
-		}
-	}
+	chunkmanager.Start()
 
 	program := readShaders()
 
@@ -81,17 +73,12 @@ func main() {
 	normal := gl.GLString("normal")
 	normalId := gl.GetUniformLocation(program, normal)
 	gl.GLStringFree(normal)
-	maxHeight := gl.GLString("maxHeight")
-	maxHeightId := gl.GetUniformLocation(program, maxHeight)
-	gl.GLStringFree(maxHeight)
-	chunkHeight := gl.GLString("chunkHeight")
-	chunkHeightId := gl.GetUniformLocation(program, chunkHeight)
-	gl.GLStringFree(chunkHeight)
 
 	frustumBuffer := camera.CreateFrustumMesh(&cam)
 
 	camCh := make(chan bool)
-	go logicLoop(camCh, &cam)
+	logicCh := make(chan bool)
+	go logicLoop(camCh, logicCh, &cam)
 
 	gl.ClearColor(0.5, 0.5, 1.0, 1.0)
 	currentTick := time.Now().UnixNano() / 1000000.0
@@ -103,6 +90,8 @@ func main() {
 		case <-camCh:
 			cam.UpdateViewMatrix()
 			cam.UpdatePVMatrix()
+		case <-logicCh:
+			chunkmanager.Update(&cam)
 		default:
 		}
 
@@ -110,22 +99,11 @@ func main() {
 		gl.UseProgram(program)
 		gl.UniformMatrix4fv(pvId, 1, gl.FALSE, &glPVMatrix[0])
 
-		for pos, chnk := range chunks {
-			posx := float64(pos.X * chunk.CHUNK_BASE)
-			posy := float64(pos.Y * chunk.CHUNK_BASE)
-			posz := float64(pos.Z * chunk.CHUNK_BASE)
-			if cam.CubeInView(vector.Vector3f{posx, posy, posz}, float64(chunk.CHUNK_BASE)) != 2 {
-				modelMatrix := matrix.NewIdentityMatrix()
-				modelMatrix.Translate(posx, posy, posz)
-				glModelMatrix := modelMatrix.ToGL()
-				gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
-				gl.Uniform1f(maxHeightId, gl.Float(chunk.CHUNK_BASE*cubed))
-				gl.Uniform1f(chunkHeightId, gl.Float(posy))
+		chunkmanager.Render(program, &cam)
 
-				chnk.RenderChunk(normalId, cam.CullPos, modelMatrix)
-			}
-		}
-
+		// Render frustum
+		glNormal := vector.Vector3f{0.0, 1.0, 0.0}.ToGL()
+		gl.Uniform3fv(normalId, 1, &glNormal[0])
 		modelMatrix := matrix.NewIdentityMatrix()
 		modelMatrix.TranslateVector(cam.FrustumPos)
 		modelMatrix.RotateY(cam.FrustumRot.Y)
@@ -133,6 +111,7 @@ func main() {
 		glModelMatrix := modelMatrix.ToGL()
 		gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
 		camera.RenderFrustumMesh(&cam, frustumBuffer)
+		// Render frustum
 
 		if err := gl.GetError(); err != 0 {
 			fmt.Printf("Err: %d\n", err)
@@ -151,7 +130,7 @@ func main() {
 	}
 }
 
-func logicLoop(camCh chan<- bool, cam *camera.Camera) {
+func logicLoop(camCh chan<- bool, logicCh chan<- bool, cam *camera.Camera) {
 	currentTick := time.Now().UnixNano() / 1000000.0
 
 	rotSpeed := 1.0
@@ -238,6 +217,7 @@ func logicLoop(camCh chan<- bool, cam *camera.Camera) {
 			if update {
 				camCh <- true
 			}
+			logicCh <- true
 		}
 
 		time.Sleep(1)

@@ -43,6 +43,22 @@ func (v Vector2i) Div(v2 Vector2i) Vector2i {
 	return Vector2i{v.X / v2.X, v.Y / v2.Y}
 }
 
+func (v Vector2i) AddScalar(s int) Vector2i {
+	return Vector2i{v.X + s, v.Y + s}
+}
+
+func (v Vector2i) SubScalar(s int) Vector2i {
+	return Vector2i{v.X - s, v.Y - s}
+}
+
+func (v Vector2i) MulScalar(s int) Vector2i {
+	return Vector2i{v.X * s, v.Y * s}
+}
+
+func (v Vector2i) DivScalar(s int) Vector2i {
+	return Vector2i{v.X / s, v.Y / s}
+}
+
 // Vector3i
 func (v Vector3i) Add(v2 Vector3i) Vector3i {
 	return Vector3i{v.X + v2.X, v.Y + v2.Y, v.Z + v2.Z}
@@ -58,6 +74,22 @@ func (v Vector3i) Mul(v2 Vector3i) Vector3i {
 
 func (v Vector3i) Div(v2 Vector3i) Vector3i {
 	return Vector3i{v.X / v2.X, v.Y / v2.Y, v.Z / v2.Z}
+}
+
+func (v Vector3i) AddScalar(s int) Vector3i {
+	return Vector3i{v.X + s, v.Y + s, v.Z + s}
+}
+
+func (v Vector3i) SubScalar(s int) Vector3i {
+	return Vector3i{v.X - s, v.Y - s, v.Z - s}
+}
+
+func (v Vector3i) MulScalar(s int) Vector3i {
+	return Vector3i{v.X * s, v.Y * s, v.Z * s}
+}
+
+func (v Vector3i) DivScalar(s int) Vector3i {
+	return Vector3i{v.X / s, v.Y / s, v.Z / s}
 }
 
 // Vector2f
