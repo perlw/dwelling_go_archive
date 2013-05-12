@@ -2,7 +2,6 @@ package chunkmanager
 
 import (
 	"dwelling/camera"
-	"dwelling/chunk"
 	"dwelling/math/matrix"
 	gl "github.com/chsc/gogl/gl33"
 )
@@ -16,9 +15,9 @@ func Render(program gl.Uint, cam *camera.Camera) {
 	gl.GLStringFree(normal)
 
 	for pos, chnk := range renderChunks {
-		posx := float64(pos.X * chunk.CHUNK_BASE)
-		posy := float64(pos.Y * chunk.CHUNK_BASE)
-		posz := float64(pos.Z * chunk.CHUNK_BASE)
+		posx := float64(pos.X * CHUNK_BASE)
+		posy := float64(pos.Y * CHUNK_BASE)
+		posz := float64(pos.Z * CHUNK_BASE)
 
 		modelMatrix := matrix.NewIdentityMatrix()
 		modelMatrix.Translate(posx, posy, posz)

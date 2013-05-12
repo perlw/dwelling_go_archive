@@ -1,4 +1,4 @@
-package chunk
+package chunkmanager
 
 import (
 	"dwelling/math/matrix"
@@ -114,7 +114,9 @@ func createMeshBuffer(faceBuffer *[]float32, size int) gl.Uint {
 	return buffer
 }
 
-func (chunk *Chunk) UpdateChunkMesh() {
+func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
+	chunks := GetChunksAroundChunk(chunkPos)
+
 	vertexBuffers := [6][]float32{}
 	for pos := range chunk.data {
 		x := float32(pos.X)
@@ -122,22 +124,76 @@ func (chunk *Chunk) UpdateChunkMesh() {
 		z := float32(pos.Z)
 
 		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y, pos.Z + 1}]; !ok {
-			appendChunkFace(&vertexBuffers[FRONT], x, y, z, FRONT)
+			skip := false
+			if chunks[FRONT] != nil {
+				if _, ok := chunks[FRONT].data[BlockCoord{pos.X, pos.Y, CHUNK_BASE - 1}]; ok {
+					skip = true
+				}
+			}
+
+			if !skip {
+				appendChunkFace(&vertexBuffers[FRONT], x, y, z, FRONT)
+			}
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y, pos.Z - 1}]; !ok {
-			appendChunkFace(&vertexBuffers[BACK], x, y, z, BACK)
+			skip := false
+			if chunks[BACK] != nil {
+				if _, ok := chunks[BACK].data[BlockCoord{pos.X, pos.Y, 0}]; ok {
+					skip = true
+				}
+			}
+
+			if !skip {
+				appendChunkFace(&vertexBuffers[BACK], x, y, z, BACK)
+			}
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X - 1, pos.Y, pos.Z}]; !ok {
-			appendChunkFace(&vertexBuffers[LEFT], x, y, z, LEFT)
+			skip := false
+			if chunks[LEFT] != nil {
+				if _, ok := chunks[LEFT].data[BlockCoord{0, pos.Y, pos.Z}]; ok {
+					skip = true
+				}
+			}
+
+			if !skip {
+				appendChunkFace(&vertexBuffers[LEFT], x, y, z, LEFT)
+			}
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X + 1, pos.Y, pos.Z}]; !ok {
-			appendChunkFace(&vertexBuffers[RIGHT], x, y, z, RIGHT)
+			skip := false
+			if chunks[RIGHT] != nil {
+				if _, ok := chunks[RIGHT].data[BlockCoord{CHUNK_BASE - 1, pos.Y, pos.Z}]; ok {
+					skip = true
+				}
+			}
+
+			if !skip {
+				appendChunkFace(&vertexBuffers[RIGHT], x, y, z, RIGHT)
+			}
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y + 1, pos.Z}]; !ok {
-			appendChunkFace(&vertexBuffers[TOP], x, y, z, TOP)
+			skip := false
+			if chunks[TOP] != nil {
+				if _, ok := chunks[TOP].data[BlockCoord{pos.X, CHUNK_BASE - 1, pos.Z}]; ok {
+					skip = true
+				}
+			}
+
+			if !skip {
+				appendChunkFace(&vertexBuffers[TOP], x, y, z, TOP)
+			}
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y - 1, pos.Z}]; !ok {
-			appendChunkFace(&vertexBuffers[BOTTOM], x, y, z, BOTTOM)
+			skip := false
+			if chunks[BOTTOM] != nil {
+				if _, ok := chunks[BOTTOM].data[BlockCoord{pos.X, 0, pos.Z}]; ok {
+					skip = true
+				}
+			}
+
+			if !skip {
+				appendChunkFace(&vertexBuffers[BOTTOM], x, y, z, BOTTOM)
+			}
 		}
 	}
 
@@ -154,6 +210,8 @@ func (chunk *Chunk) UpdateChunkMesh() {
 	}
 	worstCaseFaces := len(chunk.data) * 12
 	fmt.Printf("%d faces vs %d total, saved %d\n", numFaces, worstCaseFaces, worstCaseFaces-numFaces)
+
+	chunk.IsSetup = true
 }
 
 func (chunk *Chunk) RenderChunk(normalId gl.Int, cam vector.Vector3f, world *matrix.Matrix) {

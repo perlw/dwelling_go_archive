@@ -1,20 +1,6 @@
-package chunk
+package chunkmanager
 
-const CHUNK_BASE int = 16
-
-type BlockCoord struct {
-	X, Y, Z int
-}
-
-type Chunk struct {
-	data map[BlockCoord]Block
-	mesh ChunkMesh
-}
-
-type Block struct {
-}
-
-func NewPyramidChunk() *Chunk {
+func newPyramidChunk() *Chunk {
 	chunk := &Chunk{}
 
 	chunk.data = map[BlockCoord]Block{}
@@ -27,12 +13,12 @@ func NewPyramidChunk() *Chunk {
 		}
 	}
 
-	chunk.UpdateChunkMesh()
+	chunk.IsLoaded = true
 
 	return chunk
 }
 
-func NewCubeChunk() *Chunk {
+func newCubeChunk() *Chunk {
 	chunk := &Chunk{}
 
 	chunk.data = map[BlockCoord]Block{}
@@ -45,7 +31,7 @@ func NewCubeChunk() *Chunk {
 		}
 	}
 
-	chunk.UpdateChunkMesh()
+	chunk.IsLoaded = true
 
 	return chunk
 }
