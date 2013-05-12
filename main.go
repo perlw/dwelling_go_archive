@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-var cam = camera.Camera{Pos: vector.Vector3f{8.0, 8.0, 16.0}}
+var cam = camera.Camera{Pos: vector.Vector3f{-48.0, 32.0, -48.0}, Rot: vector.Vector3f{0.0, 135, 0.0}}
 
 func main() {
 	runtime.LockOSThread()
@@ -77,12 +77,14 @@ func main() {
 	frustumBuffer := camera.CreateFrustumMesh(&cam)
 
 	camCh := make(chan bool)
+	debugCh := make(chan bool)
 	logicCh := make(chan bool)
-	go logicLoop(camCh, logicCh, &cam)
+	go logicLoop(camCh, debugCh, logicCh, &cam)
 
 	gl.ClearColor(0.5, 0.5, 1.0, 1.0)
 	currentTick := time.Now().UnixNano() / 1000000.0
 	frameCount := 0
+	debugMode := false
 	for glfw.WindowParam(glfw.Opened) == 1 {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
@@ -90,6 +92,12 @@ func main() {
 		case <-camCh:
 			cam.UpdateViewMatrix()
 			cam.UpdatePVMatrix()
+		case debugMode = <-debugCh:
+			if debugMode {
+				chunkmanager.SetDebug(true)
+			} else {
+				chunkmanager.SetDebug(false)
+			}
 		case <-logicCh:
 			chunkmanager.Update(&cam)
 		default:
@@ -101,17 +109,19 @@ func main() {
 
 		chunkmanager.Render(program, &cam)
 
-		// Render frustum
-		glNormal := vector.Vector3f{0.0, 1.0, 0.0}.ToGL()
-		gl.Uniform3fv(normalId, 1, &glNormal[0])
-		modelMatrix := matrix.NewIdentityMatrix()
-		modelMatrix.TranslateVector(cam.FrustumPos)
-		modelMatrix.RotateY(cam.FrustumRot.Y)
-		modelMatrix.RotateX(cam.FrustumRot.X)
-		glModelMatrix := modelMatrix.ToGL()
-		gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
-		camera.RenderFrustumMesh(&cam, frustumBuffer)
-		// Render frustum
+		if debugMode {
+			// Render frustum
+			glNormal := vector.Vector3f{0.0, 1.0, 0.0}.ToGL()
+			gl.Uniform3fv(normalId, 1, &glNormal[0])
+			modelMatrix := matrix.NewIdentityMatrix()
+			modelMatrix.TranslateVector(cam.FrustumPos)
+			modelMatrix.RotateY(cam.FrustumRot.Y)
+			modelMatrix.RotateX(cam.FrustumRot.X)
+			glModelMatrix := modelMatrix.ToGL()
+			gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
+			camera.RenderFrustumMesh(&cam, frustumBuffer)
+			// Render frustum
+		}
 
 		if err := gl.GetError(); err != 0 {
 			fmt.Printf("Err: %d\n", err)
@@ -130,11 +140,14 @@ func main() {
 	}
 }
 
-func logicLoop(camCh chan<- bool, logicCh chan<- bool, cam *camera.Camera) {
+func logicLoop(camCh chan<- bool, debugCh chan<- bool, logicCh chan<- bool, cam *camera.Camera) {
 	currentTick := time.Now().UnixNano() / 1000000.0
 
 	rotSpeed := 1.0
 	camSpeed := 0.25
+
+	keyF1Held := false
+	debugMode := false
 
 	remainder := 0.0
 	for {
@@ -142,10 +155,22 @@ func logicLoop(camCh chan<- bool, logicCh chan<- bool, cam *camera.Camera) {
 		elapsedTick := float64(newTick-currentTick) + remainder
 		if elapsedTick >= 16.0 {
 			update := false
+			// Catch up loop
 			for elapsedTick >= 16.0 {
 				elapsedTick -= 16.0
 
 				// Execute logic
+				if !keyF1Held && glfw.Key(glfw.KeyF1) == glfw.KeyPress {
+					keyF1Held = true
+				}
+				if keyF1Held && glfw.Key(glfw.KeyF1) == glfw.KeyRelease {
+					keyF1Held = false
+
+					debugMode = !debugMode
+					debugCh <- debugMode
+					fmt.Printf("Debug mode: %v.\n", debugMode)
+				}
+
 				if glfw.Key(glfw.KeyUp) == glfw.KeyPress {
 					cam.Rot.X = math.Max(cam.Rot.X-rotSpeed, -90.0)
 					update = true
@@ -215,6 +240,12 @@ func logicLoop(camCh chan<- bool, logicCh chan<- bool, cam *camera.Camera) {
 			currentTick = newTick
 
 			if update {
+				if !debugMode {
+					cam.UpdateFrustum()
+					cam.CullPos.X = cam.Pos.X
+					cam.CullPos.Y = cam.Pos.Y
+					cam.CullPos.Z = cam.Pos.Z
+				}
 				camCh <- true
 			}
 			logicCh <- true

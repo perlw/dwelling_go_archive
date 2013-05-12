@@ -34,6 +34,8 @@ var renderChunks = map[ChunkCoord]*Chunk{}
 var camPos = vector.Vector3f{0.0, 0.0, 0.0}
 var camView = vector.Vector3f{0.0, 0.0, -1.0}
 
+var debugMode = false
+
 func Start() {
 	cubed := 4
 	for x := 0; x < cubed; x++ {
@@ -43,6 +45,10 @@ func Start() {
 			}
 		}
 	}
+}
+
+func SetDebug(mode bool) {
+	debugMode = mode
 }
 
 func GetChunksAroundChunk(chunkPos ChunkCoord) [6]*Chunk {

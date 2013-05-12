@@ -214,7 +214,7 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 	chunk.IsSetup = true
 }
 
-func (chunk *Chunk) RenderChunk(normalId gl.Int, cam vector.Vector3f, world *matrix.Matrix) {
+func (chunk *Chunk) RenderChunk(normalId gl.Int, cam vector.Vector3f, world *matrix.Matrix, wireframe bool) {
 	facePos := matrix.MultiplyVector3f(world, vector.Vector3f{float64(CHUNK_BASE) / 2, 0.0, float64(CHUNK_BASE) / 2})
 
 	if chunk.mesh.numVertices[FRONT] > 0 {
@@ -224,7 +224,7 @@ func (chunk *Chunk) RenderChunk(normalId gl.Int, cam vector.Vector3f, world *mat
 		dot := vector.DotProduct(camDir, normal)
 
 		if dot > 0.0 {
-			chunk.renderMeshBuffer(FRONT, normalId)
+			chunk.renderMeshBuffer(FRONT, normalId, wireframe)
 		}
 	}
 
@@ -235,7 +235,7 @@ func (chunk *Chunk) RenderChunk(normalId gl.Int, cam vector.Vector3f, world *mat
 		dot := vector.DotProduct(camDir, normal)
 
 		if dot > 0.0 {
-			chunk.renderMeshBuffer(BACK, normalId)
+			chunk.renderMeshBuffer(BACK, normalId, wireframe)
 		}
 	}
 
@@ -246,7 +246,7 @@ func (chunk *Chunk) RenderChunk(normalId gl.Int, cam vector.Vector3f, world *mat
 		dot := vector.DotProduct(camDir, normal)
 
 		if dot > 0.0 {
-			chunk.renderMeshBuffer(LEFT, normalId)
+			chunk.renderMeshBuffer(LEFT, normalId, wireframe)
 		}
 	}
 
@@ -257,27 +257,33 @@ func (chunk *Chunk) RenderChunk(normalId gl.Int, cam vector.Vector3f, world *mat
 		dot := vector.DotProduct(camDir, normal)
 
 		if dot > 0.0 {
-			chunk.renderMeshBuffer(RIGHT, normalId)
+			chunk.renderMeshBuffer(RIGHT, normalId, wireframe)
 		}
 	}
 
 	if chunk.mesh.numVertices[TOP] > 0 {
 		normal := chunkNormals[TOP]
 		normal = matrix.MultiplyVector3f(world, normal)
-		chunk.renderMeshBuffer(TOP, normalId)
+		chunk.renderMeshBuffer(TOP, normalId, wireframe)
 	}
 
 	if chunk.mesh.numVertices[BOTTOM] > 0 {
 		normal := chunkNormals[BOTTOM]
 		normal = matrix.MultiplyVector3f(world, normal)
-		chunk.renderMeshBuffer(BOTTOM, normalId)
+		chunk.renderMeshBuffer(BOTTOM, normalId, wireframe)
 	}
 }
 
-func (chunk *Chunk) renderMeshBuffer(side int, normalId gl.Int) {
+func (chunk *Chunk) renderMeshBuffer(side int, normalId gl.Int, wireframe bool) {
 	normal := chunkNormals[side].ToGL()
 	gl.Uniform3fv(normalId, 1, &normal[0])
 	gl.BindBuffer(gl.ARRAY_BUFFER, chunk.mesh.vertexBufferIds[side])
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
-	gl.DrawArrays(gl.TRIANGLES, 0, chunk.mesh.numVertices[side])
+	if wireframe {
+		gl.DrawArrays(gl.LINES, 0, chunk.mesh.numVertices[side])
+
+	} else {
+		gl.DrawArrays(gl.TRIANGLES, 0, chunk.mesh.numVertices[side])
+
+	}
 }
