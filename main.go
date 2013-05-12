@@ -14,17 +14,10 @@ import (
 	"time"
 )
 
-var cam = camera.Camera{X: 8.0, Y: 8.0, Z: 16.0, Rx: 0.0, Ry: 0.0, Rz: 0.0}
+var cam = camera.Camera{Pos: vector.Vector3f{8.0, 8.0, 16.0}}
 
 func main() {
 	runtime.LockOSThread()
-
-	tmp, tmp2, tmp3 := vector.Vector2i{1, 2}, vector.Vector2i{1, 2}, vector.Vector3f{1, 2, 3}
-	fmt.Println(tmp, tmp2, tmp3)
-	fmt.Println(tmp.Add(tmp2), tmp.Mul(tmp2))
-	fmt.Println(tmp3.Normalize(), tmp3.Normalize().Length())
-
-	return
 
 	if err := glfw.Init(); err != nil {
 		fmt.Printf("glfw: %s\n", err)
@@ -113,7 +106,7 @@ func main() {
 		default:
 		}
 
-		glPVMatrix := matrixToGL(cam.PVMatrix)
+		glPVMatrix := cam.PVMatrix.ToGL()
 		gl.UseProgram(program)
 		gl.UniformMatrix4fv(pvId, 1, gl.FALSE, &glPVMatrix[0])
 
@@ -121,23 +114,23 @@ func main() {
 			posx := float64(pos.X * chunk.CHUNK_BASE)
 			posy := float64(pos.Y * chunk.CHUNK_BASE)
 			posz := float64(pos.Z * chunk.CHUNK_BASE)
-			if cam.CubeInView([3]float64{posx, posy, posz}, float64(chunk.CHUNK_BASE)) != 2 {
+			if cam.CubeInView(vector.Vector3f{posx, posy, posz}, float64(chunk.CHUNK_BASE)) != 2 {
 				modelMatrix := matrix.NewIdentityMatrix()
 				modelMatrix.Translate(posx, posy, posz)
-				glModelMatrix := matrixToGL(modelMatrix)
+				glModelMatrix := modelMatrix.ToGL()
 				gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
 				gl.Uniform1f(maxHeightId, gl.Float(chunk.CHUNK_BASE*cubed))
 				gl.Uniform1f(chunkHeightId, gl.Float(posy))
 
-				chnk.RenderChunk(normalId, [3]float64{cam.CullX, cam.CullY, cam.CullZ}, [3]float64{posx, 0.0, posz}, modelMatrix)
+				chnk.RenderChunk(normalId, [3]float64{cam.CullPos.X, cam.CullPos.Y, cam.CullPos.Z}, [3]float64{posx, posy, posz}, modelMatrix)
 			}
 		}
 
 		modelMatrix := matrix.NewIdentityMatrix()
-		modelMatrix.Translate(cam.Fx, cam.Fy, cam.Fz)
-		modelMatrix.RotateY(cam.Fry)
-		modelMatrix.RotateX(cam.Frx)
-		glModelMatrix := matrixToGL(modelMatrix)
+		modelMatrix.TranslateVector(cam.FrustumPos)
+		modelMatrix.RotateY(cam.FrustumRot.Y)
+		modelMatrix.RotateX(cam.FrustumRot.X)
+		glModelMatrix := modelMatrix.ToGL()
 		gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
 		camera.RenderFrustumMesh(&cam, frustumBuffer)
 
@@ -175,58 +168,58 @@ func logicLoop(camCh chan<- bool, cam *camera.Camera) {
 
 				// Execute logic
 				if glfw.Key(glfw.KeyUp) == glfw.KeyPress {
-					cam.Rx = math.Max(cam.Rx-rotSpeed, -90.0)
+					cam.Rot.X = math.Max(cam.Rot.X-rotSpeed, -90.0)
 					update = true
 				}
 				if glfw.Key(glfw.KeyDown) == glfw.KeyPress {
-					cam.Rx = math.Min(cam.Rx+rotSpeed, 90.0)
+					cam.Rot.X = math.Min(cam.Rot.X+rotSpeed, 90.0)
 					update = true
 				}
 				if glfw.Key(glfw.KeyLeft) == glfw.KeyPress {
-					cam.Ry -= rotSpeed
+					cam.Rot.Y -= rotSpeed
 					update = true
 				}
 				if glfw.Key(glfw.KeyRight) == glfw.KeyPress {
-					cam.Ry += rotSpeed
+					cam.Rot.Y += rotSpeed
 					update = true
 				}
 
 				if glfw.Key('W') == glfw.KeyPress {
-					xRadii := -cam.Rx * (math.Pi / 180.0)
-					yRadii := -cam.Ry * (math.Pi / 180.0)
+					xRadii := -cam.Rot.X * (math.Pi / 180.0)
+					yRadii := -cam.Rot.Y * (math.Pi / 180.0)
 					xMove := math.Sin(yRadii) * camSpeed
 					yMove := math.Sin(xRadii) * camSpeed
 					zMove := math.Cos(yRadii) * camSpeed
-					cam.X -= xMove
-					cam.Y += yMove
-					cam.Z -= zMove
+					cam.Pos.X -= xMove
+					cam.Pos.Y += yMove
+					cam.Pos.Z -= zMove
 					update = true
 				}
 				if glfw.Key('S') == glfw.KeyPress {
-					xRadii := -cam.Rx * (math.Pi / 180.0)
-					yRadii := -cam.Ry * (math.Pi / 180.0)
+					xRadii := -cam.Rot.X * (math.Pi / 180.0)
+					yRadii := -cam.Rot.Y * (math.Pi / 180.0)
 					xMove := math.Sin(yRadii) * camSpeed
 					yMove := math.Sin(xRadii) * camSpeed
 					zMove := math.Cos(yRadii) * camSpeed
-					cam.X += xMove
-					cam.Y -= yMove
-					cam.Z += zMove
+					cam.Pos.X += xMove
+					cam.Pos.Y -= yMove
+					cam.Pos.Z += zMove
 					update = true
 				}
 				if glfw.Key('A') == glfw.KeyPress {
-					yRadii := -(cam.Ry - 90.0) * (math.Pi / 180.0)
+					yRadii := -(cam.Rot.Y - 90.0) * (math.Pi / 180.0)
 					xMove := math.Sin(yRadii) * camSpeed
 					zMove := math.Cos(yRadii) * camSpeed
-					cam.X -= xMove
-					cam.Z -= zMove
+					cam.Pos.X -= xMove
+					cam.Pos.Z -= zMove
 					update = true
 				}
 				if glfw.Key('D') == glfw.KeyPress {
-					yRadii := -(cam.Ry + 90.0) * (math.Pi / 180.0)
+					yRadii := -(cam.Rot.Y + 90.0) * (math.Pi / 180.0)
 					xMove := math.Sin(yRadii) * camSpeed
 					zMove := math.Cos(yRadii) * camSpeed
-					cam.X -= xMove
-					cam.Z -= zMove
+					cam.Pos.X -= xMove
+					cam.Pos.Z -= zMove
 					update = true
 				}
 
@@ -234,9 +227,9 @@ func logicLoop(camCh chan<- bool, cam *camera.Camera) {
 					cam.UpdateFrustum()
 				}
 				if glfw.Key('C') == glfw.KeyPress {
-					cam.CullX = cam.X
-					cam.CullY = cam.Y
-					cam.CullZ = cam.Z
+					cam.CullPos.X = cam.Pos.X
+					cam.CullPos.Y = cam.Pos.Y
+					cam.CullPos.Z = cam.Pos.Z
 				}
 			}
 			remainder = math.Max(elapsedTick, 0.0)
@@ -308,29 +301,4 @@ func printProgramLog(program gl.Uint) {
 	defer gl.GLStringFree(glString)
 	gl.GetProgramInfoLog(program, gl.Sizei(length), nil, glString)
 	fmt.Println("program log: ", gl.GoString(glString))
-}
-
-func matrixToGL(matrix *matrix.Matrix) [16]gl.Float {
-	var newMatrix [16]gl.Float
-
-	for y := 0; y < 4; y++ {
-		for x := 0; x < 4; x++ {
-			newMatrix[(x*4)+y] = gl.Float(matrix.Values[(y*4)+x])
-		}
-	}
-
-	return newMatrix
-}
-
-func multiplyMatrixVector(matrix *matrix.Matrix, vector [4]float64) [4]float64 {
-	values := [4]float64{0.0, 0.0, 0.0}
-
-	for y := 0; y < 4; y++ {
-		for x := 0; x < 4; x++ {
-			i := (y * 4) + x
-			values[y] += matrix.Values[i] * vector[x]
-		}
-	}
-
-	return values
 }

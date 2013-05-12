@@ -2,17 +2,16 @@ package camera
 
 import (
 	"dwelling/math/matrix"
+	"dwelling/math/vector"
 	gl "github.com/chsc/gogl/gl33"
 	"math"
 	"unsafe"
 )
 
 type Camera struct {
-	X, Y, Z             float64
-	Rx, Ry, Rz          float64
-	CullX, CullY, CullZ float64
-	Fx, Fy, Fz          float64
-	Frx, Fry, Frz       float64
+	Pos, Rot               vector.Vector3f
+	CullPos                vector.Vector3f
+	FrustumPos, FrustumRot vector.Vector3f
 
 	ViewMatrix       *matrix.Matrix
 	ProjectionMatrix *matrix.Matrix
@@ -27,10 +26,10 @@ type Plane struct {
 
 func (cam *Camera) UpdateViewMatrix() {
 	view := matrix.NewIdentityMatrix()
-	view.RotateX(-cam.Rx)
-	view.RotateY(-cam.Ry)
-	view.RotateZ(-cam.Rz)
-	view.Translate(-cam.X, -cam.Y, -cam.Z)
+	view.RotateX(-cam.Rot.X)
+	view.RotateY(-cam.Rot.Y)
+	view.RotateZ(-cam.Rot.Z)
+	view.Translate(-cam.Pos.X, -cam.Pos.Y, -cam.Pos.Z)
 
 	cam.ViewMatrix = view
 }
@@ -82,24 +81,20 @@ func (cam *Camera) UpdateFrustum() {
 		cam.Planes[t].Normalize()
 	}*/
 
-	cam.Fx = cam.X
-	cam.Fy = cam.Y
-	cam.Fz = cam.Z
-	cam.Frx = cam.Rx
-	cam.Fry = cam.Ry
-	cam.Frz = cam.Rz
+	cam.FrustumPos = cam.Pos
+	cam.FrustumRot = cam.Rot
 }
 
-func (cam *Camera) CubeInView(origo [3]float64, size float64) int {
-	corners := [8][3]float64{
-		{origo[0], origo[1], origo[2]},
-		{origo[0] + size, origo[1], origo[2]},
-		{origo[0] + size, origo[1], origo[2] + size},
-		{origo[0], origo[1], origo[2] + size},
-		{origo[0], origo[1] + size, origo[2] + size},
-		{origo[0] + size, origo[1] + size, origo[2] + size},
-		{origo[0] + size, origo[1] + size, origo[2]},
-		{origo[0], origo[1] + size, origo[2]},
+func (cam *Camera) CubeInView(origo vector.Vector3f, size float64) int {
+	corners := [8]vector.Vector3f{
+		{origo.X, origo.Y, origo.Z},
+		{origo.X + size, origo.Y, origo.Z},
+		{origo.X + size, origo.Y, origo.Z + size},
+		{origo.X, origo.Y, origo.Z + size},
+		{origo.X, origo.Y + size, origo.Z + size},
+		{origo.X + size, origo.Y + size, origo.Z + size},
+		{origo.X + size, origo.Y + size, origo.Z},
+		{origo.X, origo.Y + size, origo.Z},
 	}
 
 	status := 0 // 0 inside, 1 partly, 2 outside
@@ -133,8 +128,8 @@ func (plane *Plane) Normalize() {
 	plane.D /= magnitude
 }
 
-func (plane *Plane) ClassifyPoint(vector [3]float64) float64 {
-	return (plane.A * vector[0]) + (plane.B * vector[1]) + (plane.C * vector[2]) + plane.D
+func (plane *Plane) ClassifyPoint(v vector.Vector3f) float64 {
+	return (plane.A * v.X) + (plane.B * v.Y) + (plane.C * v.Z) + plane.D
 }
 
 func CreateFrustumMesh(cam *Camera) gl.Uint {

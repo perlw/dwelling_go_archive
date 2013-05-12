@@ -1,8 +1,10 @@
 package matrix
 
 import (
+	"dwelling/math/vector"
 	"errors"
 	"math"
+	"strconv"
 )
 
 type Matrix struct {
@@ -55,6 +57,30 @@ func MultiplyMatrix(matrixA, matrixB *Matrix) *Matrix {
 	}
 
 	return &Matrix{Values: values}
+}
+
+func MultiplyVector3f(m *Matrix, v vector.Vector3f) vector.Vector3f {
+	result := vector.Vector3f{}
+
+	for t := 0; t < 4; t++ {
+		if row, err := m.RowToVector3f(t); err == nil {
+			result = result.Add(row.Mul(v))
+		}
+	}
+
+	return result
+}
+
+func MultiplyVector4f(m *Matrix, v vector.Vector4f) vector.Vector4f {
+	result := vector.Vector4f{}
+
+	for t := 0; t < 4; t++ {
+		if row, err := m.RowToVector4f(t); err == nil {
+			result = result.Add(row.Mul(v))
+		}
+	}
+
+	return result
 }
 
 func InvertMatrix(matrix *Matrix) (*Matrix, error) {
@@ -175,7 +201,7 @@ func InvertMatrix(matrix *Matrix) (*Matrix, error) {
 
 	det := m[0]*values[0] + m[1]*values[4] + m[2]*values[8] + m[3]*values[12]
 	if det == 0 {
-		return NewIdentityMatrix(), errors.New("matrix: Could not invert matrix.")
+		return NewIdentityMatrix(), errors.New("matrix: not possible to invert")
 	}
 
 	det = 1.0 / det
@@ -192,6 +218,16 @@ func (m *Matrix) Translate(x, y, z float64) {
 	transMatrix.Values[3] = x
 	transMatrix.Values[7] = y
 	transMatrix.Values[11] = z
+
+	m.Values = MultiplyMatrix(m, transMatrix).Values
+}
+
+func (m *Matrix) TranslateVector(v vector.Vector3f) {
+	transMatrix := NewIdentityMatrix()
+
+	transMatrix.Values[3] = v.X
+	transMatrix.Values[7] = v.Y
+	transMatrix.Values[11] = v.Z
 
 	m.Values = MultiplyMatrix(m, transMatrix).Values
 }
@@ -245,4 +281,22 @@ func (m *Matrix) RotateZ(rot float64) {
 	}
 
 	m.Values = MultiplyMatrix(m, rotMatrix).Values
+}
+
+func (m *Matrix) RowToVector3f(row int) (vector.Vector3f, error) {
+	if row < 0 || row > 3 {
+		return vector.Vector3f{}, errors.New("matrix: row " + strconv.Itoa(row) + " is out of bounds")
+	}
+
+	rowIndex := row * 4
+	return vector.Vector3f{m.Values[rowIndex+0], m.Values[rowIndex+1], m.Values[rowIndex+2]}, nil
+}
+
+func (m *Matrix) RowToVector4f(row int) (vector.Vector4f, error) {
+	if row < 0 || row > 3 {
+		return vector.Vector4f{}, errors.New("matrix: row " + strconv.Itoa(row) + " is out of bounds")
+	}
+
+	rowIndex := row * 4
+	return vector.Vector4f{m.Values[rowIndex+0], m.Values[rowIndex+1], m.Values[rowIndex+2], m.Values[rowIndex+3]}, nil
 }
