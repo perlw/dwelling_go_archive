@@ -200,6 +200,9 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 	for t := 0; t < 6; t++ {
 		chunk.mesh.numVertices[t] = gl.Sizei(len(vertexBuffers[t]))
 		if chunk.mesh.numVertices[t] > 0 {
+			if chunk.mesh.vertexBufferIds[t] > 0 {
+				gl.DeleteBuffers(1, &chunk.mesh.vertexBufferIds[t])
+			}
 			chunk.mesh.vertexBufferIds[t] = createMeshBuffer(&vertexBuffers[t], len(vertexBuffers[t]))
 		}
 	}
