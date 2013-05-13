@@ -50,6 +50,9 @@ func main() {
 	gl.Viewport(0, 0, 640, 480)
 
 	cam.ProjectionMatrix = matrix.NewPerspectiveMatrix(53.13, 640.0/480.0, 0.1, 1000.0)
+	cam.FrustumPos = cam.Pos
+	cam.FrustumRot = cam.Rot
+	cam.CullPos = cam.Pos
 	cam.UpdateViewMatrix()
 	cam.UpdatePVMatrix()
 	cam.UpdateFrustum()
