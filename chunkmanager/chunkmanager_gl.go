@@ -3,6 +3,7 @@ package chunkmanager
 import (
 	"dwelling/camera"
 	"dwelling/math/matrix"
+	"dwelling/math/vector"
 	gl "github.com/chsc/gogl/gl33"
 )
 
@@ -24,7 +25,7 @@ func Render(program gl.Uint, cam *camera.Camera) {
 		glModelMatrix := modelMatrix.ToGL()
 		gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
 
-		chnk.RenderChunk(normalId, cam.CullPos, modelMatrix, false)
+		chnk.RenderChunk(normalId, cam.CullPos, modelMatrix, false, vector.Vector3f{posx, posy, posz})
 	}
 
 	if debugMode {
@@ -38,7 +39,7 @@ func Render(program gl.Uint, cam *camera.Camera) {
 			glModelMatrix := modelMatrix.ToGL()
 			gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
 
-			chnk.RenderChunk(normalId, cam.CullPos, modelMatrix, true)
+			chnk.RenderChunk(normalId, cam.CullPos, modelMatrix, true, vector.Vector3f{posx, posy, posz})
 		}
 	}
 }

@@ -45,7 +45,13 @@ func Start() {
 	for x := 0; x < cubed; x++ {
 		for z := 0; z < cubed; z++ {
 			for y := 0; y < cubed; y++ {
-				chunkMap[ChunkCoord{x, y, z}] = newCubeChunk()
+				val := rand.Intn(2)
+
+				if val == 0 {
+					chunkMap[ChunkCoord{x, y, z}] = newCubeChunk()
+				} else {
+					chunkMap[ChunkCoord{x, y, z}] = newPyramidChunk()
+				}
 			}
 		}
 	}

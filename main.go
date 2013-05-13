@@ -150,7 +150,6 @@ func logicLoop(camCh chan<- bool, debugCh chan<- bool, logicCh chan<- bool, delC
 	camSpeed := 0.25
 
 	keyF1Held := false
-	keyDelHeld := false
 	debugMode := false
 
 	remainder := 0.0
@@ -232,11 +231,7 @@ func logicLoop(camCh chan<- bool, debugCh chan<- bool, logicCh chan<- bool, delC
 				}
 
 				if debugMode {
-					if !keyDelHeld && glfw.Key(glfw.KeyDel) == glfw.KeyPress {
-						keyDelHeld = true
-					}
-					if keyDelHeld && glfw.Key(glfw.KeyDel) == glfw.KeyRelease {
-						keyDelHeld = false
+					if glfw.Key(glfw.KeyDel) == glfw.KeyPress {
 						delCh <- true
 					}
 

@@ -125,8 +125,8 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 
 		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y, pos.Z + 1}]; !ok {
 			skip := false
-			if chunks[FRONT] != nil {
-				if _, ok := chunks[FRONT].data[BlockCoord{pos.X, pos.Y, CHUNK_BASE - 1}]; ok {
+			if pos.Z == CHUNK_BASE-1 && chunks[FRONT] != nil {
+				if _, ok := chunks[FRONT].data[BlockCoord{pos.X, pos.Y, 0}]; ok {
 					skip = true
 				}
 			}
@@ -137,8 +137,8 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y, pos.Z - 1}]; !ok {
 			skip := false
-			if chunks[BACK] != nil {
-				if _, ok := chunks[BACK].data[BlockCoord{pos.X, pos.Y, 0}]; ok {
+			if pos.Z == 0 && chunks[BACK] != nil {
+				if _, ok := chunks[BACK].data[BlockCoord{pos.X, pos.Y, CHUNK_BASE - 1}]; ok {
 					skip = true
 				}
 			}
@@ -149,8 +149,8 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X - 1, pos.Y, pos.Z}]; !ok {
 			skip := false
-			if chunks[LEFT] != nil {
-				if _, ok := chunks[LEFT].data[BlockCoord{0, pos.Y, pos.Z}]; ok {
+			if pos.X == 0 && chunks[LEFT] != nil {
+				if _, ok := chunks[LEFT].data[BlockCoord{CHUNK_BASE - 1, pos.Y, pos.Z}]; ok {
 					skip = true
 				}
 			}
@@ -161,8 +161,8 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X + 1, pos.Y, pos.Z}]; !ok {
 			skip := false
-			if chunks[RIGHT] != nil {
-				if _, ok := chunks[RIGHT].data[BlockCoord{CHUNK_BASE - 1, pos.Y, pos.Z}]; ok {
+			if pos.X == CHUNK_BASE-1 && chunks[RIGHT] != nil {
+				if _, ok := chunks[RIGHT].data[BlockCoord{0, pos.Y, pos.Z}]; ok {
 					skip = true
 				}
 			}
@@ -173,8 +173,8 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y + 1, pos.Z}]; !ok {
 			skip := false
-			if chunks[TOP] != nil {
-				if _, ok := chunks[TOP].data[BlockCoord{pos.X, CHUNK_BASE - 1, pos.Z}]; ok {
+			if pos.Y == CHUNK_BASE-1 && chunks[TOP] != nil {
+				if _, ok := chunks[TOP].data[BlockCoord{pos.X, 0, pos.Z}]; ok {
 					skip = true
 				}
 			}
@@ -185,8 +185,8 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y - 1, pos.Z}]; !ok {
 			skip := false
-			if chunks[BOTTOM] != nil {
-				if _, ok := chunks[BOTTOM].data[BlockCoord{pos.X, 0, pos.Z}]; ok {
+			if pos.Y == 0 && chunks[BOTTOM] != nil {
+				if _, ok := chunks[BOTTOM].data[BlockCoord{pos.X, CHUNK_BASE - 1, pos.Z}]; ok {
 					skip = true
 				}
 			}
@@ -214,63 +214,27 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 	chunk.IsSetup = true
 }
 
-func (chunk *Chunk) RenderChunk(normalId gl.Int, cam vector.Vector3f, world *matrix.Matrix, wireframe bool) {
-	facePos := matrix.MultiplyVector3f(world, vector.Vector3f{float64(CHUNK_BASE) / 2, 0.0, float64(CHUNK_BASE) / 2})
+func (chunk *Chunk) RenderChunk(normalId gl.Int, cam vector.Vector3f, world *matrix.Matrix, wireframe bool, chunkPos vector.Vector3f) {
+	var facePos = [6]vector.Vector3f{
+		{chunkPos.X, chunkPos.Y, chunkPos.Z},
+		{chunkPos.X, chunkPos.Y, chunkPos.Z + float64(CHUNK_BASE)},
+		{chunkPos.X + float64(CHUNK_BASE), chunkPos.Y, chunkPos.Z},
+		{chunkPos.X, chunkPos.Y, chunkPos.Z},
+		{chunkPos.X, chunkPos.Y, chunkPos.Z},
+		{chunkPos.X, chunkPos.Y + float64(CHUNK_BASE), chunkPos.Z},
+	}
 
-	if chunk.mesh.numVertices[FRONT] > 0 {
-		normal := chunkNormals[FRONT]
-		normal = matrix.MultiplyVector3f(world, normal)
-		camDir := cam.Sub(facePos)
-		dot := vector.DotProduct(camDir, normal)
+	for t := 0; t < 6; t++ {
+		if chunk.mesh.numVertices[t] > 0 {
+			normal := chunkNormals[t]
+			normal = matrix.MultiplyVector3f(world, normal)
+			camDir := cam.Sub(facePos[t])
+			dot := vector.DotProduct(camDir, normal)
 
-		if dot > 0.0 {
-			chunk.renderMeshBuffer(FRONT, normalId, wireframe)
+			if dot > 0.0 {
+				chunk.renderMeshBuffer(t, normalId, wireframe)
+			}
 		}
-	}
-
-	if chunk.mesh.numVertices[BACK] > 0 {
-		normal := chunkNormals[BACK]
-		normal = matrix.MultiplyVector3f(world, normal)
-		camDir := cam.Sub(facePos)
-		dot := vector.DotProduct(camDir, normal)
-
-		if dot > 0.0 {
-			chunk.renderMeshBuffer(BACK, normalId, wireframe)
-		}
-	}
-
-	if chunk.mesh.numVertices[LEFT] > 0 {
-		normal := chunkNormals[LEFT]
-		normal = matrix.MultiplyVector3f(world, normal)
-		camDir := cam.Sub(facePos)
-		dot := vector.DotProduct(camDir, normal)
-
-		if dot > 0.0 {
-			chunk.renderMeshBuffer(LEFT, normalId, wireframe)
-		}
-	}
-
-	if chunk.mesh.numVertices[RIGHT] > 0 {
-		normal := chunkNormals[RIGHT]
-		normal = matrix.MultiplyVector3f(world, normal)
-		camDir := cam.Sub(facePos)
-		dot := vector.DotProduct(camDir, normal)
-
-		if dot > 0.0 {
-			chunk.renderMeshBuffer(RIGHT, normalId, wireframe)
-		}
-	}
-
-	if chunk.mesh.numVertices[TOP] > 0 {
-		normal := chunkNormals[TOP]
-		normal = matrix.MultiplyVector3f(world, normal)
-		chunk.renderMeshBuffer(TOP, normalId, wireframe)
-	}
-
-	if chunk.mesh.numVertices[BOTTOM] > 0 {
-		normal := chunkNormals[BOTTOM]
-		normal = matrix.MultiplyVector3f(world, normal)
-		chunk.renderMeshBuffer(BOTTOM, normalId, wireframe)
 	}
 }
 
