@@ -49,7 +49,7 @@ function run {
     fi
 
     cd ${BUILD_DIR}
-    ./${PRGN_NAME}
+    vblank_mode=0 ./${PRGN_NAME}
 }
 
 if [ $# -ne 0 ]; then

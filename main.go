@@ -26,7 +26,7 @@ func main() {
 	defer glfw.Terminate()
 
 	glfw.OpenWindowHint(glfw.OpenGLVersionMajor, 3)
-	glfw.OpenWindowHint(glfw.OpenGLVersionMinor, 3)
+	glfw.OpenWindowHint(glfw.OpenGLVersionMinor, 0)
 	glfw.OpenWindowHint(glfw.WindowNoResize, 1)
 
 	if err := glfw.OpenWindow(640, 480, 0, 0, 0, 0, 16, 0, glfw.Windowed); err != nil {
@@ -280,6 +280,7 @@ func readShaders() gl.Uint {
 	gl.ShaderSource(vertexObj, 1, &vertexSource, nil)
 	gl.CompileShader(vertexObj)
 	defer gl.DeleteShader(vertexObj)
+	fmt.Println("vertex")
 	printShaderLog(vertexObj)
 
 	// Fragment shader
@@ -294,6 +295,7 @@ func readShaders() gl.Uint {
 	gl.ShaderSource(fragmentObj, 1, &fragmentSource, nil)
 	gl.CompileShader(fragmentObj)
 	defer gl.DeleteShader(fragmentObj)
+	fmt.Println("fragment")
 	printShaderLog(fragmentObj)
 
 	// Program
