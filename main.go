@@ -18,6 +18,8 @@ var cam = camera.Camera{Pos: vector.Vector3f{-48.0, 32.0, -48.0}, Rot: vector.Ve
 
 func main() {
 	runtime.LockOSThread()
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	fmt.Printf("Using %d cpus for concurrency\n", runtime.NumCPU())
 
 	if err := glfw.Init(); err != nil {
 		fmt.Printf("glfw: %s\n", err)
@@ -143,6 +145,8 @@ func main() {
 			frameCount = 0
 			currentTick = newTick
 		}
+
+		runtime.Gosched()
 	}
 }
 
@@ -262,8 +266,6 @@ func logicLoop(camCh chan<- bool, debugCh chan<- bool, logicCh chan<- bool, delC
 			}
 			logicCh <- true
 		}
-
-		time.Sleep(1)
 	}
 }
 

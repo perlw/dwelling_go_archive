@@ -248,7 +248,6 @@ func (chunk *Chunk) renderMeshBuffer(side int, normalId gl.Int, wireframe bool) 
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
 	if wireframe {
 		gl.DrawArrays(gl.LINES, 0, chunk.mesh.numVertices[side])
-
 	} else {
 		gl.DrawArrays(gl.TRIANGLES, 0, chunk.mesh.numVertices[side])
 
