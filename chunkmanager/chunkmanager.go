@@ -117,10 +117,19 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 	mouseNear, _ := matrix.Unproject(vector.Vector3f{float64(mx), float64(480 - my), 0.0}, cam.ViewMatrix, cam.ProjectionMatrix, 640, 480)
 	mouseFar, _ := matrix.Unproject(vector.Vector3f{float64(mx), float64(480 - my), 1.0}, cam.ViewMatrix, cam.ProjectionMatrix, 640, 480)
 	cam.MousePos = cam.Pos
-	cam.MouseDir = mouseFar.Sub(mouseNear)
+	cam.MouseDir = mouseFar.Sub(mouseNear).Normalize()
 	fmt.Println(cam.MousePos, cam.MouseDir)
-	//fmt.Println(mouseDir)
 
+	for t := 0.0; t < 256.0; t += float64(CHUNK_BASE) {
+		rayPos := cam.MousePos.Add(cam.MouseDir.MulScalar(t))
+		x := int(rayPos.X) / CHUNK_BASE
+		y := int(rayPos.Y) / CHUNK_BASE
+		z := int(rayPos.Z) / CHUNK_BASE
+		if _, ok := renderChunks[ChunkCoord{x, y, z}]; ok {
+			fmt.Printf("Hit at <%d,%d,%d>\n", x, y, z)
+			break
+		}
+	}
 }
 
 func Update(cam *camera.Camera) {
