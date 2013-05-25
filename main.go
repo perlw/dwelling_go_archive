@@ -129,6 +129,19 @@ func main() {
 			gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
 			camera.RenderFrustumMesh(&cam, frustumBuffer)
 			// Render frustum
+
+			// Render Mouse ray
+			mouseBuffer := camera.CreateMouseMesh(&cam)
+			glNormal = vector.Vector3f{0.0, 1.0, 0.0}.ToGL()
+			gl.Uniform3fv(normalId, 1, &glNormal[0])
+			modelMatrix = matrix.NewIdentityMatrix()
+			glModelMatrix = modelMatrix.ToGL()
+			gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
+			camera.RenderFrustumMesh(&cam, mouseBuffer)
+			if mouseBuffer > 0 {
+				gl.DeleteBuffers(1, &mouseBuffer)
+			}
+			// Render Mouse ray
 		}
 
 		if err := gl.GetError(); err != 0 {
@@ -235,6 +248,11 @@ func logicLoop(camCh chan<- bool, debugCh chan<- bool, logicCh chan<- bool, delC
 					cam.Pos.X -= xMove
 					cam.Pos.Z -= zMove
 					update = true
+				}
+
+				if glfw.MouseButton(glfw.MouseLeft) == glfw.KeyPress {
+					mx, my := glfw.MousePos()
+					chunkmanager.ClickedInChunk(mx, my, cam)
 				}
 
 				if debugMode {

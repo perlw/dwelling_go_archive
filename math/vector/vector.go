@@ -26,6 +26,14 @@ func DotProduct(v1, v2 Vector3f) float64 {
 	return (v1.X * v2.X) + (v1.Y * v2.Y) + (v1.Z * v2.Z)
 }
 
+func Vector3fTo4f(vec Vector3f, w float64) Vector4f {
+	return Vector4f{vec.X, vec.Y, vec.Z, w}
+}
+
+func Vector4fTo3f(vec Vector4f) Vector3f {
+	return Vector3f{vec.X, vec.Y, vec.Z}
+}
+
 // Vector2i
 func (v Vector2i) Add(v2 Vector2i) Vector2i {
 	return Vector2i{v.X + v2.X, v.Y + v2.Y}

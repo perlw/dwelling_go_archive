@@ -60,25 +60,23 @@ func MultiplyMatrix(matrixA, matrixB *Matrix) *Matrix {
 }
 
 func MultiplyVector3f(m *Matrix, v vector.Vector3f) vector.Vector3f {
-	result := vector.Vector3f{}
+	result := vector.Vector4f{}
 
-	for t := 0; t < 4; t++ {
-		if row, err := m.RowToVector3f(t); err == nil {
-			result = result.Add(row.Mul(v))
-		}
-	}
+	result.X = m.Values[0]*v.X + m.Values[4]*v.Y + m.Values[8]*v.Z + m.Values[12]
+	result.Y = m.Values[1]*v.X + m.Values[5]*v.Y + m.Values[9]*v.Z + m.Values[13]
+	result.Z = m.Values[2]*v.X + m.Values[6]*v.Y + m.Values[10]*v.Z + m.Values[14]
+	result.W = m.Values[3]*v.X + m.Values[7]*v.Y + m.Values[11]*v.Z + m.Values[15]
 
-	return result
+	return vector.Vector4fTo3f(result)
 }
 
 func MultiplyVector4f(m *Matrix, v vector.Vector4f) vector.Vector4f {
 	result := vector.Vector4f{}
 
-	for t := 0; t < 4; t++ {
-		if row, err := m.RowToVector4f(t); err == nil {
-			result = result.Add(row.Mul(v))
-		}
-	}
+	result.X = m.Values[0]*v.X + m.Values[4]*v.Y + m.Values[8]*v.Z + m.Values[12]*v.W
+	result.Y = m.Values[1]*v.X + m.Values[5]*v.Y + m.Values[9]*v.Z + m.Values[13]*v.W
+	result.Z = m.Values[2]*v.X + m.Values[6]*v.Y + m.Values[10]*v.Z + m.Values[14]*v.W
+	result.W = m.Values[3]*v.X + m.Values[7]*v.Y + m.Values[11]*v.Z + m.Values[15]*v.W
 
 	return result
 }
@@ -212,6 +210,28 @@ func InvertMatrix(matrix *Matrix) (*Matrix, error) {
 	return &Matrix{Values: values}, nil
 }
 
+func Unproject(winPos vector.Vector3f, worldMatrix, projMatrix *Matrix, winWidth, winHeight int) (vector.Vector3f, error) {
+	invPVMatrix, err := InvertMatrix(MultiplyMatrix(projMatrix, worldMatrix))
+	if err != nil {
+		return vector.Vector3f{0.0, 0.0, 0.0}, err
+	}
+
+	in := vector.Vector3fTo4f(winPos, 1.0)
+	in.X /= float64(winWidth)
+	in.Y /= float64(winHeight)
+	in.X = (in.X * 2.0) - 1.0
+	in.Y = (in.Y * 2.0) - 1.0
+	in.Z = (in.Z * 2.0) - 1.0
+
+	out := MultiplyVector4f(invPVMatrix, in)
+	if out.W == 0.0 {
+		return vector.Vector3f{0.0, 0.0, 0.0}, errors.New("matrix: could not unproject")
+	}
+	out = out.DivScalar(out.W)
+
+	return vector.Vector4fTo3f(out), nil
+}
+
 func (m *Matrix) Translate(x, y, z float64) {
 	transMatrix := NewIdentityMatrix()
 
@@ -283,13 +303,12 @@ func (m *Matrix) RotateZ(rot float64) {
 	m.Values = MultiplyMatrix(m, rotMatrix).Values
 }
 
-func (m *Matrix) RowToVector3f(row int) (vector.Vector3f, error) {
-	if row < 0 || row > 3 {
-		return vector.Vector3f{}, errors.New("matrix: row " + strconv.Itoa(row) + " is out of bounds")
+func (m *Matrix) ColumnToVector4f(column int) (vector.Vector4f, error) {
+	if column < 0 || column > 3 {
+		return vector.Vector4f{}, errors.New("matrix: column " + strconv.Itoa(column) + " is out of bounds")
 	}
 
-	rowIndex := row * 4
-	return vector.Vector3f{m.Values[rowIndex+0], m.Values[rowIndex+1], m.Values[rowIndex+2]}, nil
+	return vector.Vector4f{m.Values[column], m.Values[column+4], m.Values[column+8], m.Values[column+12]}, nil
 }
 
 func (m *Matrix) RowToVector4f(row int) (vector.Vector4f, error) {
@@ -299,4 +318,16 @@ func (m *Matrix) RowToVector4f(row int) (vector.Vector4f, error) {
 
 	rowIndex := row * 4
 	return vector.Vector4f{m.Values[rowIndex+0], m.Values[rowIndex+1], m.Values[rowIndex+2], m.Values[rowIndex+3]}, nil
+}
+
+func (m *Matrix) Transpose() *Matrix {
+	values := [16]float64{}
+
+	for y := 0; y < 4; y++ {
+		for x := 0; x < 4; x++ {
+			values[(x*4)+y] = m.Values[(y*4)+x]
+		}
+	}
+
+	return &Matrix{Values: values}
 }

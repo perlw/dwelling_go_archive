@@ -12,6 +12,7 @@ type Camera struct {
 	Pos, Rot               vector.Vector3f
 	CullPos                vector.Vector3f
 	FrustumPos, FrustumRot vector.Vector3f
+	MousePos, MouseDir     vector.Vector3f
 
 	ViewMatrix       *matrix.Matrix
 	ProjectionMatrix *matrix.Matrix
@@ -202,4 +203,33 @@ func RenderFrustumMesh(cam *Camera, meshBuffer gl.Uint) {
 	gl.BindBuffer(gl.ARRAY_BUFFER, meshBuffer)
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
 	gl.DrawArrays(gl.LINES, 0, 24)
+}
+
+func CreateMouseMesh(cam *Camera) gl.Uint {
+	var buffer gl.Uint
+	sizeFloat := int(unsafe.Sizeof([1]float32{}))
+
+	startPos := cam.MousePos
+	endPos := startPos.Add(cam.MouseDir.MulScalar(1000.0))
+	vertices := [...]float32{
+		float32(startPos.X), float32(startPos.Y), float32(startPos.Z),
+		float32(endPos.X), float32(endPos.Y), float32(endPos.Z),
+	}
+
+	gl.GenBuffers(1, &buffer)
+	gl.BindBuffer(gl.ARRAY_BUFFER, buffer)
+	gl.BufferData(gl.ARRAY_BUFFER, gl.Sizeiptr(sizeFloat*len(vertices)), gl.Pointer(&vertices[0]), gl.STATIC_DRAW)
+
+	gl.BindBuffer(gl.ARRAY_BUFFER, buffer)
+	gl.EnableVertexAttribArray(0)
+	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
+	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
+
+	return buffer
+}
+
+func RenderMouseMesh(cam *Camera, meshBuffer gl.Uint) {
+	gl.BindBuffer(gl.ARRAY_BUFFER, meshBuffer)
+	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
+	gl.DrawArrays(gl.LINES, 0, 2)
 }

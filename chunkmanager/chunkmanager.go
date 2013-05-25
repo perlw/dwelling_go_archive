@@ -2,6 +2,7 @@ package chunkmanager
 
 import (
 	"dwelling/camera"
+	"dwelling/math/matrix"
 	"dwelling/math/vector"
 	"fmt"
 	"math/rand"
@@ -110,6 +111,30 @@ func GetChunksAroundChunk(chunkPos ChunkCoord) [6]*Chunk {
 	}
 
 	return chunks
+}
+
+func ClickedInChunk(mx, my int, cam *camera.Camera) {
+	mouseNear, _ := matrix.Unproject(vector.Vector3f{float64(mx), float64(480 - my), 0.0}, cam.ViewMatrix, cam.ProjectionMatrix, 640, 480)
+	mouseFar, _ := matrix.Unproject(vector.Vector3f{float64(mx), float64(480 - my), 1.0}, cam.ViewMatrix, cam.ProjectionMatrix, 640, 480)
+	//mouseDir, _ := matrix.Unproject(vector.Vector3f{float64(mx), float64(480 - my), 1.0}, cam.ViewMatrix, cam.ProjectionMatrix, 640, 480)
+	cam.MousePos = cam.Pos
+	cam.MouseDir = mouseFar.Sub(mouseNear)
+	fmt.Println(cam.MousePos, cam.MouseDir)
+	//fmt.Println(mouseDir)
+
+	/*x := (float64(mx) - 640.0*0.5) * (1.0 / 640.0) * (53.13 * 0.5)
+	y := (float64(480-my) - 480.0*0.5) * (1.0 / 640.0) * (53.13 * 0.5)
+	dir, _ := cam.ViewMatrix.RowToVector4f(2)
+	up, _ := cam.ViewMatrix.RowToVector4f(1)
+	right, _ := cam.ViewMatrix.RowToVector4f(0)
+	dx := right.MulScalar(x)
+	dy := up.MulScalar(y)
+
+	camDir := dir.Add(dx.Add(dy).MulScalar(2.0)).Normalize()
+	fmt.Println(camDir)
+
+	cam.MousePos = cam.Pos
+	cam.MouseDir = vector.Vector4fTo3f(camDir)*/
 }
 
 func Update(cam *camera.Camera) {
