@@ -217,21 +217,24 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 	chunk.IsSetup = true
 }
 
-func (chunk *Chunk) RenderChunk(normalId gl.Int, cam vector.Vector3f, world *matrix.Matrix, wireframe bool, chunkPos vector.Vector3f) {
-	var facePos = [6]vector.Vector3f{
-		{chunkPos.X, chunkPos.Y, chunkPos.Z},
-		{chunkPos.X, chunkPos.Y, chunkPos.Z + float64(CHUNK_BASE)},
-		{chunkPos.X + float64(CHUNK_BASE), chunkPos.Y, chunkPos.Z},
-		{chunkPos.X, chunkPos.Y, chunkPos.Z},
-		{chunkPos.X, chunkPos.Y, chunkPos.Z},
-		{chunkPos.X, chunkPos.Y + float64(CHUNK_BASE), chunkPos.Z},
-	}
+var facePos = [6]vector.Vector3f{
+	{0.0, 0.0, 0.0},
+	{0.0, 0.0, 0.0 + float64(CHUNK_BASE)},
+	{0.0 + float64(CHUNK_BASE), 0.0, 0.0},
+	{0.0, 0.0, 0.0},
+	{0.0, 0.0, 0.0},
+	{0.0, 0.0 + float64(CHUNK_BASE), 0.0},
+}
 
+func (chunk *Chunk) RenderChunk(normalId gl.Int, cam vector.Vector3f, world *matrix.Matrix, wireframe bool, chunkPos vector.Vector3f) {
+	invModel, _ := matrix.InvertMatrix(world)
+	invModel = invModel.Transpose()
 	for t := 0; t < 6; t++ {
 		if chunk.mesh.numVertices[t] > 0 {
 			normal := chunkNormals[t]
-			normal = matrix.MultiplyVector3f(world, normal)
-			camDir := cam.Sub(facePos[t])
+			normal = matrix.MultiplyVector3f(invModel, normal)
+			face := matrix.MultiplyVector3f(world, facePos[t])
+			camDir := cam.Sub(face)
 			dot := vector.DotProduct(camDir, normal)
 
 			if dot > 0.0 {

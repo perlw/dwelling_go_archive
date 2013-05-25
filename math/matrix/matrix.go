@@ -62,10 +62,10 @@ func MultiplyMatrix(matrixA, matrixB *Matrix) *Matrix {
 func MultiplyVector3f(m *Matrix, v vector.Vector3f) vector.Vector3f {
 	result := vector.Vector4f{}
 
-	result.X = m.Values[0]*v.X + m.Values[4]*v.Y + m.Values[8]*v.Z + m.Values[12]
-	result.Y = m.Values[1]*v.X + m.Values[5]*v.Y + m.Values[9]*v.Z + m.Values[13]
-	result.Z = m.Values[2]*v.X + m.Values[6]*v.Y + m.Values[10]*v.Z + m.Values[14]
-	result.W = m.Values[3]*v.X + m.Values[7]*v.Y + m.Values[11]*v.Z + m.Values[15]
+	result.X = m.Values[0]*v.X + m.Values[1]*v.Y + m.Values[2]*v.Z + m.Values[3]
+	result.Y = m.Values[4]*v.X + m.Values[5]*v.Y + m.Values[6]*v.Z + m.Values[7]
+	result.Z = m.Values[8]*v.X + m.Values[9]*v.Y + m.Values[10]*v.Z + m.Values[11]
+	result.W = m.Values[12]*v.X + m.Values[13]*v.Y + m.Values[14]*v.Z + m.Values[15]
 
 	return vector.Vector4fTo3f(result)
 }
@@ -73,10 +73,10 @@ func MultiplyVector3f(m *Matrix, v vector.Vector3f) vector.Vector3f {
 func MultiplyVector4f(m *Matrix, v vector.Vector4f) vector.Vector4f {
 	result := vector.Vector4f{}
 
-	result.X = m.Values[0]*v.X + m.Values[4]*v.Y + m.Values[8]*v.Z + m.Values[12]*v.W
-	result.Y = m.Values[1]*v.X + m.Values[5]*v.Y + m.Values[9]*v.Z + m.Values[13]*v.W
-	result.Z = m.Values[2]*v.X + m.Values[6]*v.Y + m.Values[10]*v.Z + m.Values[14]*v.W
-	result.W = m.Values[3]*v.X + m.Values[7]*v.Y + m.Values[11]*v.Z + m.Values[15]*v.W
+	result.X = m.Values[0]*v.X + m.Values[1]*v.Y + m.Values[2]*v.Z + m.Values[3]*v.W
+	result.Y = m.Values[4]*v.X + m.Values[5]*v.Y + m.Values[6]*v.Z + m.Values[7]*v.W
+	result.Z = m.Values[8]*v.X + m.Values[9]*v.Y + m.Values[10]*v.Z + m.Values[11]*v.W
+	result.W = m.Values[12]*v.X + m.Values[13]*v.Y + m.Values[14]*v.Z + m.Values[15]*v.W
 
 	return result
 }
