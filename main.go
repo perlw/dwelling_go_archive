@@ -78,6 +78,12 @@ func main() {
 	normal := gl.GLString("normal")
 	normalId := gl.GetUniformLocation(program, normal)
 	gl.GLStringFree(normal)
+	flatColor := gl.GLString("flatColor")
+	flatColorId := gl.GetUniformLocation(program, flatColor)
+	gl.GLStringFree(flatColor)
+	skipLight := gl.GLString("skipLight")
+	skipLightId := gl.GetUniformLocation(program, skipLight)
+	gl.GLStringFree(skipLight)
 
 	frustumBuffer := camera.CreateFrustumMesh(&cam)
 
@@ -122,9 +128,14 @@ func main() {
 		chunkmanager.Render(program, &cam)
 
 		if debugMode {
+			gl.Uniform1i(skipLightId, 1)
+
 			// Render frustum
 			glNormal := vector.Vector3f{0.0, 1.0, 0.0}.ToGL()
 			gl.Uniform3fv(normalId, 1, &glNormal[0])
+			glFlatColor := vector.Vector3f{0.5, 0.5, 1.0}.ToGL()
+			gl.Uniform3fv(flatColorId, 1, &glFlatColor[0])
+
 			modelMatrix := matrix.NewIdentityMatrix()
 			modelMatrix.TranslateVector(cam.FrustumPos)
 			modelMatrix.RotateY(cam.FrustumRot.Y)
@@ -135,6 +146,9 @@ func main() {
 			// Render frustum
 
 			// Render Mouse ray
+			glFlatColor = vector.Vector3f{1.0, 0.5, 0.5}.ToGL()
+			gl.Uniform3fv(flatColorId, 1, &glFlatColor[0])
+
 			mouseBuffer := camera.CreateMouseMesh(&cam)
 			glNormal = vector.Vector3f{0.0, 1.0, 0.0}.ToGL()
 			gl.Uniform3fv(normalId, 1, &glNormal[0])
@@ -146,6 +160,8 @@ func main() {
 				gl.DeleteBuffers(1, &mouseBuffer)
 			}
 			// Render Mouse ray
+
+			gl.Uniform1i(skipLightId, 0)
 		}
 
 		if err := gl.GetError(); err != 0 {
