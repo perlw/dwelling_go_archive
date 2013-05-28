@@ -14,6 +14,7 @@ func newPyramidChunk() *Chunk {
 	}
 
 	chunk.IsLoaded = true
+	chunk.MouseHit = false
 
 	return chunk
 }
@@ -32,6 +33,7 @@ func newCubeChunk() *Chunk {
 	}
 
 	chunk.IsLoaded = true
+	chunk.MouseHit = false
 
 	return chunk
 }

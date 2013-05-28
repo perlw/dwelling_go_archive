@@ -226,7 +226,7 @@ var facePos = [6]vector.Vector3f{
 	{0.0, 0.0 + float64(CHUNK_BASE), 0.0},
 }
 
-func (chunk *Chunk) RenderChunk(normalId gl.Int, cam vector.Vector3f, world *matrix.Matrix, wireframe bool, chunkPos vector.Vector3f) {
+func (chunk *Chunk) RenderChunk(normalId, mouseHitId gl.Int, cam vector.Vector3f, world *matrix.Matrix, wireframe bool, chunkPos vector.Vector3f) {
 	invModel, _ := matrix.InvertMatrix(world)
 	invModel = invModel.Transpose()
 	for t := 0; t < 6; t++ {
@@ -238,15 +238,20 @@ func (chunk *Chunk) RenderChunk(normalId gl.Int, cam vector.Vector3f, world *mat
 			dot := vector.DotProduct(camDir, normal)
 
 			if dot > 0.0 {
-				chunk.renderMeshBuffer(t, normalId, wireframe)
+				var mouseHitGL gl.Int = 0
+				if chunk.MouseHit {
+					mouseHitGL = 1
+				}
+				normal := chunkNormals[t].ToGL()
+				gl.Uniform3fv(normalId, 1, &normal[0])
+				gl.Uniform1i(mouseHitId, mouseHitGL)
+				chunk.renderMeshBuffer(t, wireframe)
 			}
 		}
 	}
 }
 
-func (chunk *Chunk) renderMeshBuffer(side int, normalId gl.Int, wireframe bool) {
-	normal := chunkNormals[side].ToGL()
-	gl.Uniform3fv(normalId, 1, &normal[0])
+func (chunk *Chunk) renderMeshBuffer(side int, wireframe bool) {
 	gl.BindBuffer(gl.ARRAY_BUFFER, chunk.mesh.vertexBufferIds[side])
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
 	if wireframe {

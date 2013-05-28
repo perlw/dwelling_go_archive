@@ -85,13 +85,15 @@ func main() {
 	debugCh := make(chan bool)
 	logicCh := make(chan bool)
 	delCh := make(chan bool)
-	go logicLoop(camCh, debugCh, logicCh, delCh, &cam)
+	exitCh := make(chan bool)
+	go logicLoop(camCh, debugCh, logicCh, delCh, exitCh, &cam)
 
 	gl.ClearColor(0.25, 0.25, 0.25, 1.0)
 	currentTick := time.Now().UnixNano() / 1000000.0
 	frameCount := 0
 	debugMode := false
-	for glfw.WindowParam(glfw.Opened) == 1 {
+	running := true
+	for glfw.WindowParam(glfw.Opened) == 1 && running {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		select {
@@ -108,6 +110,8 @@ func main() {
 			chunkmanager.Update(&cam)
 		case <-delCh:
 			chunkmanager.DebugDeleteRandomBlock()
+		case <-exitCh:
+			running = false
 		default:
 		}
 
@@ -163,7 +167,7 @@ func main() {
 	}
 }
 
-func logicLoop(camCh chan<- bool, debugCh chan<- bool, logicCh chan<- bool, delCh chan<- bool, cam *camera.Camera) {
+func logicLoop(camCh chan<- bool, debugCh chan<- bool, logicCh chan<- bool, delCh chan<- bool, exitCh chan<- bool, cam *camera.Camera) {
 	currentTick := time.Now().UnixNano() / 1000000.0
 
 	rotSpeed := 1.0
@@ -183,6 +187,9 @@ func logicLoop(camCh chan<- bool, debugCh chan<- bool, logicCh chan<- bool, delC
 				elapsedTick -= 16.0
 
 				// Execute logic
+				if glfw.Key(glfw.KeyEsc) == glfw.KeyPress {
+					exitCh <- true
+				}
 				if !keyF1Held && glfw.Key(glfw.KeyF1) == glfw.KeyPress {
 					keyF1Held = true
 				}

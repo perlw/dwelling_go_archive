@@ -14,6 +14,9 @@ func Render(program gl.Uint, cam *camera.Camera) {
 	normal := gl.GLString("normal")
 	normalId := gl.GetUniformLocation(program, normal)
 	gl.GLStringFree(normal)
+	mouseHit := gl.GLString("mouseHit")
+	mouseHitId := gl.GetUniformLocation(program, mouseHit)
+	gl.GLStringFree(mouseHit)
 
 	for pos, chnk := range renderChunks {
 		posx := float64(pos.X * CHUNK_BASE)
@@ -25,7 +28,7 @@ func Render(program gl.Uint, cam *camera.Camera) {
 		glModelMatrix := modelMatrix.ToGL()
 		gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
 
-		chnk.RenderChunk(normalId, cam.CullPos, modelMatrix, false, vector.Vector3f{posx, posy, posz})
+		chnk.RenderChunk(normalId, mouseHitId, cam.CullPos, modelMatrix, false, vector.Vector3f{posx, posy, posz})
 	}
 
 	if debugMode {
@@ -39,7 +42,7 @@ func Render(program gl.Uint, cam *camera.Camera) {
 			glModelMatrix := modelMatrix.ToGL()
 			gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
 
-			chnk.RenderChunk(normalId, cam.CullPos, modelMatrix, true, vector.Vector3f{posx, posy, posz})
+			chnk.RenderChunk(normalId, mouseHitId, cam.CullPos, modelMatrix, true, vector.Vector3f{posx, posy, posz})
 		}
 	}
 }

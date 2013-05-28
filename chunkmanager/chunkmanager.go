@@ -24,6 +24,7 @@ type Chunk struct {
 	mesh     ChunkMesh
 	IsLoaded bool
 	IsSetup  bool
+	MouseHit bool
 }
 
 type Block struct {
@@ -120,14 +121,19 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 	cam.MouseDir = mouseFar.Sub(mouseNear).Normalize()
 	fmt.Println(cam.MousePos, cam.MouseDir)
 
+	for _, chnk := range renderChunks {
+		chnk.MouseHit = false
+	}
+
 	for t := 0.0; t < 256.0; t += float64(CHUNK_BASE) {
 		rayPos := cam.MousePos.Add(cam.MouseDir.MulScalar(t))
 		x := int(rayPos.X) / CHUNK_BASE
 		y := int(rayPos.Y) / CHUNK_BASE
 		z := int(rayPos.Z) / CHUNK_BASE
-		if _, ok := renderChunks[ChunkCoord{x, y, z}]; ok {
+		if chnk, ok := renderChunks[ChunkCoord{x, y, z}]; ok {
 			fmt.Printf("Hit at <%d,%d,%d>\n", x, y, z)
-			break
+			chnk.MouseHit = true
+			//break
 		}
 	}
 }
