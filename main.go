@@ -86,6 +86,7 @@ func main() {
 	gl.GLStringFree(skipLight)
 
 	frustumBuffer := camera.CreateFrustumMesh(&cam)
+	gridBuffer := camera.CreateGridMesh()
 
 	camCh := make(chan bool)
 	debugCh := make(chan bool)
@@ -150,15 +151,23 @@ func main() {
 			gl.Uniform3fv(flatColorId, 1, &glFlatColor[0])
 
 			mouseBuffer := camera.CreateMouseMesh(&cam)
-			glNormal = vector.Vector3f{0.0, 1.0, 0.0}.ToGL()
-			gl.Uniform3fv(normalId, 1, &glNormal[0])
 			modelMatrix = matrix.NewIdentityMatrix()
 			glModelMatrix = modelMatrix.ToGL()
 			gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
-			camera.RenderFrustumMesh(&cam, mouseBuffer)
+			camera.RenderMouseMesh(mouseBuffer)
 			if mouseBuffer > 0 {
 				gl.DeleteBuffers(1, &mouseBuffer)
 			}
+			// Render Mouse ray
+
+			// Render Grid
+			glFlatColor = vector.Vector3f{0.0, 0.0, 0.0}.ToGL()
+			gl.Uniform3fv(flatColorId, 1, &glFlatColor[0])
+
+			modelMatrix = matrix.NewIdentityMatrix()
+			glModelMatrix = modelMatrix.ToGL()
+			gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
+			camera.RenderGridMesh(gridBuffer)
 			// Render Mouse ray
 
 			gl.Uniform1i(skipLightId, 0)

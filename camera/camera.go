@@ -228,8 +228,58 @@ func CreateMouseMesh(cam *Camera) gl.Uint {
 	return buffer
 }
 
-func RenderMouseMesh(cam *Camera, meshBuffer gl.Uint) {
+func RenderMouseMesh(meshBuffer gl.Uint) {
 	gl.BindBuffer(gl.ARRAY_BUFFER, meshBuffer)
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
 	gl.DrawArrays(gl.LINES, 0, 2)
+}
+
+func CreateGridMesh() gl.Uint {
+	var buffer gl.Uint
+	sizeFloat := int(unsafe.Sizeof([1]float32{}))
+
+	var vertices []float32
+	gridSize := 128
+	for t := -gridSize; t < gridSize; t++ {
+		i := float32(t)
+		g := float32(gridSize)
+
+		// XZ
+		vertices = append(vertices, -g, 0.0, i)
+		vertices = append(vertices, g, 0.0, i)
+
+		vertices = append(vertices, i, 0.0, -g)
+		vertices = append(vertices, i, 0.0, g)
+
+		// XY
+		vertices = append(vertices, -g, i, -1.0)
+		vertices = append(vertices, g, i, -1.0)
+
+		vertices = append(vertices, i, -g, -1.0)
+		vertices = append(vertices, i, g, -1.0)
+
+		// YZ
+		vertices = append(vertices, 0.0, -g, i)
+		vertices = append(vertices, 0.0, g, i)
+
+		vertices = append(vertices, 0.0, i, -g)
+		vertices = append(vertices, 0.0, i, g)
+	}
+
+	gl.GenBuffers(1, &buffer)
+	gl.BindBuffer(gl.ARRAY_BUFFER, buffer)
+	gl.BufferData(gl.ARRAY_BUFFER, gl.Sizeiptr(sizeFloat*len(vertices)), gl.Pointer(&vertices[0]), gl.STATIC_DRAW)
+
+	gl.BindBuffer(gl.ARRAY_BUFFER, buffer)
+	gl.EnableVertexAttribArray(0)
+	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
+	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
+
+	return buffer
+}
+
+func RenderGridMesh(meshBuffer gl.Uint) {
+	gl.BindBuffer(gl.ARRAY_BUFFER, meshBuffer)
+	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
+	gl.DrawArrays(gl.LINES, 0, 3072)
 }
