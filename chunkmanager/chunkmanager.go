@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"sort"
 	"time"
 )
 
@@ -29,6 +30,7 @@ type Chunk struct {
 }
 
 type Block struct {
+	visible bool
 }
 
 var chunkMap = map[ChunkCoord]*Chunk{}
@@ -129,6 +131,7 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 		{0.0, 1.0, 0.0},
 		{0.0, -1.0, 0.0},
 	}
+	hitChunks := map[float64]ChunkCoord{}
 	for pos, chnk := range renderChunks {
 		x := float64(pos.X * CHUNK_BASE)
 		y := float64(pos.Y * CHUNK_BASE)
@@ -148,11 +151,10 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 
 		chnk.MouseHit = false
 		inside := 0
+		cubeMid := vector.Vector3f{x + halfBase, y + halfBase, z + halfBase}
+		tmp := cubeMid.Sub(cam.MousePos)
+		dist := math.Sqrt((tmp.X * tmp.X) + (tmp.Y * tmp.Y) + (tmp.Z * tmp.Z))
 		for t := 0; t < 6; t++ {
-			cubeMid := vector.Vector3f{x + halfBase, y + halfBase, z + halfBase}
-			tmp := cubeMid.Sub(cam.MousePos)
-			dist := math.Sqrt((tmp.X * tmp.X) + (tmp.Y * tmp.Y) + (tmp.Z * tmp.Z))
-
 			d := -(vector.DotProduct(planeNormals[t], planePos[t]))
 			deep := vector.DotProduct(planeNormals[t], cam.MousePos.Add(cam.MouseDir.MulScalar(dist))) + d
 
@@ -162,6 +164,75 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 		}
 		if inside >= 6 {
 			chnk.MouseHit = true
+			hitChunks[dist] = pos
+		}
+	}
+
+	if len(hitChunks) > 0 {
+		chunkKeys := make([]float64, len(hitChunks))
+		t := 0
+		for k, _ := range hitChunks {
+			chunkKeys[t] = k
+			t++
+		}
+		sort.Float64s(chunkKeys)
+
+		for _, key := range chunkKeys {
+			chnkPos := hitChunks[key]
+			chnk := chunkMap[chnkPos]
+			hitBlocks := map[float64]BlockCoord{}
+			for pos, blk := range chnk.data {
+				if blk.visible {
+					x := float64((chnkPos.X * CHUNK_BASE) + pos.X)
+					y := float64((chnkPos.Y * CHUNK_BASE) + pos.Y)
+					z := float64((chnkPos.Z * CHUNK_BASE) + pos.Z)
+					x1 := x + 1.0
+					y1 := y + 1.0
+					z1 := z + 1.0
+					planePos := [6]vector.Vector3f{
+						{x, y, z},
+						{x, y, z1},
+						{x1, y, z},
+						{x, y, z},
+						{x, y, z},
+						{x, y1, z},
+					}
+
+					inside := 0
+					cubeMid := vector.Vector3f{x + 0.5, y + 0.5, z + 0.5}
+					tmp := cubeMid.Sub(cam.MousePos)
+					dist := math.Sqrt((tmp.X * tmp.X) + (tmp.Y * tmp.Y) + (tmp.Z * tmp.Z))
+					for t := 0; t < 6; t++ {
+						d := -(vector.DotProduct(planeNormals[t], planePos[t]))
+						deep := vector.DotProduct(planeNormals[t], cam.MousePos.Add(cam.MouseDir.MulScalar(dist))) + d
+
+						if deep > 0.0 {
+							inside++
+						}
+					}
+					if inside >= 6 {
+						hitBlocks[dist] = pos
+					}
+				}
+			}
+
+			if len(hitBlocks) > 0 {
+				blockKeys := make([]float64, len(hitBlocks))
+				t := 0
+				for k, _ := range hitBlocks {
+					blockKeys[t] = k
+					t++
+				}
+				sort.Float64s(blockKeys)
+
+				k := blockKeys[0]
+				blockPos := hitBlocks[k]
+
+				delete(chnk.data, blockPos)
+				rebuildChunks[chnkPos] = chnk
+
+				break
+			}
 		}
 	}
 }

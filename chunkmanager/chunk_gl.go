@@ -123,6 +123,7 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 		y := float32(pos.Y)
 		z := float32(pos.Z)
 
+		sides := 0
 		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y, pos.Z + 1}]; !ok {
 			skip := false
 			if pos.Z == CHUNK_BASE-1 && chunks[FRONT] != nil {
@@ -132,6 +133,7 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 			}
 
 			if !skip {
+				sides++
 				appendChunkFace(&vertexBuffers[FRONT], x, y, z, FRONT)
 			}
 		}
@@ -144,6 +146,7 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 			}
 
 			if !skip {
+				sides++
 				appendChunkFace(&vertexBuffers[BACK], x, y, z, BACK)
 			}
 		}
@@ -156,6 +159,7 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 			}
 
 			if !skip {
+				sides++
 				appendChunkFace(&vertexBuffers[LEFT], x, y, z, LEFT)
 			}
 		}
@@ -168,6 +172,7 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 			}
 
 			if !skip {
+				sides++
 				appendChunkFace(&vertexBuffers[RIGHT], x, y, z, RIGHT)
 			}
 		}
@@ -180,6 +185,7 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 			}
 
 			if !skip {
+				sides++
 				appendChunkFace(&vertexBuffers[TOP], x, y, z, TOP)
 			}
 		}
@@ -192,8 +198,15 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 			}
 
 			if !skip {
+				sides++
 				appendChunkFace(&vertexBuffers[BOTTOM], x, y, z, BOTTOM)
 			}
+		}
+
+		if sides > 0 {
+			blk := chunk.data[pos]
+			blk.visible = true
+			chunk.data[pos] = blk
 		}
 	}
 

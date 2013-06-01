@@ -16,7 +16,7 @@ void main() {
 
 		vec4 color = (lightColor + vec4(eyeNormal, 1.0)) / 4;
 		if (mouseHit > 0) {
-			color.g = 1.0f;
+			//color.g = 1.0f;
 		}
 		vec4 ambient = color;
 
