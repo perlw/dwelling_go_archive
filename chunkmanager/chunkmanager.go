@@ -121,35 +121,49 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 	cam.MousePos = cam.Pos
 	cam.MouseDir = mouseFar.Sub(mouseNear).Normalize()
 
-	for _, chnk := range renderChunks {
-		chnk.MouseHit = false
+	planeNormals := [6]vector.Vector3f{
+		{0.0, 0.0, 1.0},
+		{0.0, 0.0, -1.0},
+		{-1.0, 0.0, 0.0},
+		{1.0, 0.0, 0.0},
+		{0.0, 1.0, 0.0},
+		{0.0, -1.0, 0.0},
 	}
-
-	math.Floor(1.0)
-	fmt.Println(cam.MouseDir)
-
-	plane := vector.Vector4f{1.0, 0.0, 0.0, 0.0}
-	planeNormal := vector.Vector4fTo3f(plane)
-	p := planeNormal.Sub(cam.MouseDir)
-	ndp := vector.DotProduct(planeNormal, p)
-	ndr := vector.DotProduct(planeNormal, cam.MouseDir)
-	t := ndp / ndr
-	fmt.Println(t)
-
-	//T = (planeNormal dot (pointOnPlane - rayOrigin)) / (planeNormal dot rayDirection);
-	//pointInPlane = rayOrigin + (rayDirection * T);
-
-	/*	for t := 0.0; t < 256.0; t += float64(CHUNK_BASE) {
-		rayPos := cam.MousePos.Add(cam.MouseDir.MulScalar(t))
-		x := int(math.Trunc(rayPos.X)) / CHUNK_BASE
-		y := int(math.Trunc(rayPos.Y)) / CHUNK_BASE
-		z := int(math.Trunc(rayPos.Z)) / CHUNK_BASE
-		if chnk, ok := renderChunks[ChunkCoord{x, y, z}]; ok {
-			fmt.Printf("Hit at <%d,%d,%d>\n", x, y, z)
-			chnk.MouseHit = true
-			//break
+	for pos, chnk := range renderChunks {
+		x := float64(pos.X * CHUNK_BASE)
+		y := float64(pos.Y * CHUNK_BASE)
+		z := float64(pos.Z * CHUNK_BASE)
+		x1 := x + float64(CHUNK_BASE)
+		y1 := y + float64(CHUNK_BASE)
+		z1 := z + float64(CHUNK_BASE)
+		halfBase := float64(CHUNK_BASE / 2)
+		planePos := [6]vector.Vector3f{
+			{x, y, z},
+			{x, y, z1},
+			{x1, y, z},
+			{x, y, z},
+			{x, y, z},
+			{x, y1, z},
 		}
-	}*/
+
+		chnk.MouseHit = false
+		inside := 0
+		for t := 0; t < 6; t++ {
+			cubeMid := vector.Vector3f{x + halfBase, y + halfBase, z + halfBase}
+			tmp := cubeMid.Sub(cam.MousePos)
+			dist := math.Sqrt((tmp.X * tmp.X) + (tmp.Y * tmp.Y) + (tmp.Z * tmp.Z))
+
+			d := -(vector.DotProduct(planeNormals[t], planePos[t]))
+			deep := vector.DotProduct(planeNormals[t], cam.MousePos.Add(cam.MouseDir.MulScalar(dist))) + d
+
+			if deep > 0.0 {
+				inside++
+			}
+		}
+		if inside >= 6 {
+			chnk.MouseHit = true
+		}
+	}
 }
 
 func Update(cam *camera.Camera) {
