@@ -5,7 +5,6 @@ import (
 	"dwelling/math/matrix"
 	"dwelling/math/vector"
 	"fmt"
-	"math"
 	"math/rand"
 	"sort"
 	"time"
@@ -132,6 +131,7 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 		{0.0, -1.0, 0.0},
 	}
 	hitChunks := map[float64]ChunkCoord{}
+	intersectPoints := map[ChunkCoord]vector.Vector3f{}
 	for pos, chnk := range renderChunks {
 		x := float64(pos.X * CHUNK_BASE)
 		y := float64(pos.Y * CHUNK_BASE)
@@ -139,7 +139,6 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 		x1 := x + float64(CHUNK_BASE)
 		y1 := y + float64(CHUNK_BASE)
 		z1 := z + float64(CHUNK_BASE)
-		halfBase := float64(CHUNK_BASE / 2)
 		planePos := [6]vector.Vector3f{
 			{x, y, z},
 			{x, y, z1},
@@ -150,21 +149,24 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 		}
 
 		chnk.MouseHit = false
-		inside := 0
-		cubeMid := vector.Vector3f{x + halfBase, y + halfBase, z + halfBase}
-		tmp := cubeMid.Sub(cam.MousePos)
-		dist := math.Sqrt((tmp.X * tmp.X) + (tmp.Y * tmp.Y) + (tmp.Z * tmp.Z))
-		for t := 0; t < 6; t++ {
-			d := -(vector.DotProduct(planeNormals[t], planePos[t]))
-			deep := vector.DotProduct(planeNormals[t], cam.MousePos.Add(cam.MouseDir.MulScalar(dist))) + d
+		for dist := 0.0; dist < 128.0; dist += 1.0 {
+			inside := 0
+			rayPos := vector.Vector3f{}
+			for t := 0; t < 6; t++ {
+				d := -(vector.DotProduct(planeNormals[t], planePos[t]))
+				rayPos = cam.MousePos.Add(cam.MouseDir.MulScalar(dist))
+				deep := vector.DotProduct(planeNormals[t], rayPos) + d
 
-			if deep > 0.0 {
-				inside++
+				if deep > 0.0 {
+					inside++
+				}
 			}
-		}
-		if inside >= 6 {
-			chnk.MouseHit = true
-			hitChunks[dist] = pos
+			if inside >= 6 {
+				chnk.MouseHit = true
+				hitChunks[dist] = pos
+				intersectPoints[pos] = rayPos
+				break
+			}
 		}
 	}
 
@@ -177,8 +179,8 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 		}
 		sort.Float64s(chunkKeys)
 
-		for _, key := range chunkKeys {
-			chnkPos := hitChunks[key]
+		for t := 0; t < len(chunkKeys); t++ {
+			chnkPos := hitChunks[chunkKeys[t]]
 			chnk := chunkMap[chnkPos]
 			hitBlocks := map[float64]BlockCoord{}
 			for pos, blk := range chnk.data {
@@ -198,20 +200,22 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 						{x, y1, z},
 					}
 
-					inside := 0
-					cubeMid := vector.Vector3f{x + 0.5, y + 0.5, z + 0.5}
-					tmp := cubeMid.Sub(cam.MousePos)
-					dist := math.Sqrt((tmp.X * tmp.X) + (tmp.Y * tmp.Y) + (tmp.Z * tmp.Z))
-					for t := 0; t < 6; t++ {
-						d := -(vector.DotProduct(planeNormals[t], planePos[t]))
-						deep := vector.DotProduct(planeNormals[t], cam.MousePos.Add(cam.MouseDir.MulScalar(dist))) + d
+					rayOrig := intersectPoints[chnkPos]
+					for dist := 0.0; dist < 16.0; dist += 0.5 {
+						inside := 0
+						for t := 0; t < 6; t++ {
+							d := -(vector.DotProduct(planeNormals[t], planePos[t]))
+							rayPos := rayOrig.Add(cam.MouseDir.MulScalar(dist))
+							deep := vector.DotProduct(planeNormals[t], rayPos) + d
 
-						if deep > 0.0 {
-							inside++
+							if deep > 0.0 {
+								inside++
+							}
 						}
-					}
-					if inside >= 6 {
-						hitBlocks[dist] = pos
+						if inside >= 6 {
+							hitBlocks[dist] = pos
+							break
+						}
 					}
 				}
 			}
