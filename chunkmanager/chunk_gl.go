@@ -226,8 +226,6 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 	}
 	worstCaseFaces := len(chunk.data) * 12
 	fmt.Printf("%d faces vs %d total, saved %d\n", numFaces, worstCaseFaces, worstCaseFaces-numFaces)
-
-	chunk.IsSetup = true
 }
 
 var facePos = [6]vector.Vector3f{

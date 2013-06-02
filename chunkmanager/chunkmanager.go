@@ -21,11 +21,12 @@ type BlockCoord struct {
 }
 
 type Chunk struct {
-	data     map[BlockCoord]Block
-	mesh     ChunkMesh
-	IsLoaded bool
-	IsSetup  bool
-	MouseHit bool
+	data         map[BlockCoord]Block
+	mesh         ChunkMesh
+	IsLoaded     bool
+	IsSetup      bool
+	IsRebuilding bool
+	MouseHit     bool
 }
 
 type Block struct {
@@ -133,6 +134,10 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 	hitChunks := map[float64]ChunkCoord{}
 	intersectPoints := map[ChunkCoord]vector.Vector3f{}
 	for pos, chnk := range renderChunks {
+		if chnk.IsRebuilding {
+			continue
+		}
+
 		x := float64(pos.X * CHUNK_BASE)
 		y := float64(pos.Y * CHUNK_BASE)
 		z := float64(pos.Z * CHUNK_BASE)
@@ -257,14 +262,17 @@ func Update(cam *camera.Camera) {
 func updateSetupList() {
 	for pos, chnk := range chunkMap {
 		if chnk.IsLoaded && !chnk.IsSetup {
-			chnk.UpdateChunkMesh(pos)
+			rebuildChunks[pos] = chnk
+			chnk.IsSetup = true
 		}
 	}
 }
 
 func updateRebuildList() {
 	for pos, chnk := range rebuildChunks {
+		chnk.IsRebuilding = true
 		chnk.UpdateChunkMesh(pos)
+		chnk.IsRebuilding = false
 	}
 
 	rebuildChunks = map[ChunkCoord]*Chunk{}
@@ -273,10 +281,14 @@ func updateRebuildList() {
 func updateVisibilityList(cam *camera.Camera) {
 	// TODO: Add chunk range limit
 	for t, chnk := range chunkMap {
-		if chnk.IsLoaded && chnk.IsSetup {
+		if chnk.IsLoaded && chnk.IsSetup && !chnk.IsRebuilding {
 			if _, ok := visibleChunks[t]; !ok {
 				fmt.Printf("Added chunk at %v to visible list.\n", t)
 				visibleChunks[t] = chunkMap[t]
+			}
+		} else {
+			if _, ok := visibleChunks[t]; ok {
+				delete(visibleChunks, t)
 			}
 		}
 	}
