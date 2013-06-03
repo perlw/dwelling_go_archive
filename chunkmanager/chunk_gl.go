@@ -35,62 +35,62 @@ func appendChunkFace(faceBuffer *[]float32, x, y, z float32, face int) {
 	switch face {
 	case FRONT:
 		(*faceBuffer) = append((*faceBuffer),
-			x, y, z,
-			x+1.0, y, z,
-			x+1.0, y+1.0, z,
-			x+1.0, y+1.0, z,
-			x, y+1.0, z,
-			x, y, z,
+			x, y, z+1.0,
+			x+1.0, y, z+1.0,
+			x+1.0, y+1.0, z+1.0,
+			x+1.0, y+1.0, z+1.0,
+			x, y+1.0, z+1.0,
+			x, y, z+1.0,
 		)
 
 	case BACK:
 		(*faceBuffer) = append((*faceBuffer),
-			x+1.0, y+1.0, z-1.0,
-			x+1.0, y, z-1.0,
-			x, y, z-1.0,
-			x, y, z-1.0,
-			x, y+1.0, z-1.0,
-			x+1.0, y+1.0, z-1.0,
+			x+1.0, y+1.0, z,
+			x+1.0, y, z,
+			x, y, z,
+			x, y, z,
+			x, y+1.0, z,
+			x+1.0, y+1.0, z,
 		)
 
 	case LEFT:
 		(*faceBuffer) = append((*faceBuffer),
-			x, y, z-1.0,
 			x, y, z,
+			x, y, z+1.0,
+			x, y+1.0, z+1.0,
+			x, y+1.0, z+1.0,
 			x, y+1.0, z,
-			x, y+1.0, z,
-			x, y+1.0, z-1.0,
-			x, y, z-1.0,
+			x, y, z,
 		)
 
 	case RIGHT:
 		(*faceBuffer) = append((*faceBuffer),
-			x+1.0, y+1.0, z,
+			x+1.0, y+1.0, z+1.0,
+			x+1.0, y, z+1.0,
 			x+1.0, y, z,
-			x+1.0, y, z-1.0,
-			x+1.0, y, z-1.0,
-			x+1.0, y+1.0, z-1.0,
+			x+1.0, y, z,
 			x+1.0, y+1.0, z,
+			x+1.0, y+1.0, z+1.0,
 		)
 
 	case TOP:
 		(*faceBuffer) = append((*faceBuffer),
+			x+1.0, y+1.0, z+1.0,
 			x+1.0, y+1.0, z,
-			x+1.0, y+1.0, z-1.0,
-			x, y+1.0, z-1.0,
-			x, y+1.0, z-1.0,
 			x, y+1.0, z,
-			x+1.0, y+1.0, z,
+			x, y+1.0, z,
+			x, y+1.0, z+1.0,
+			x+1.0, y+1.0, z+1.0,
 		)
 
 	case BOTTOM:
 		(*faceBuffer) = append((*faceBuffer),
-			x, y, z-1.0,
-			x+1.0, y, z-1.0,
-			x+1.0, y, z,
-			x+1.0, y, z,
 			x, y, z,
-			x, y, z-1.0,
+			x+1.0, y, z,
+			x+1.0, y, z+1.0,
+			x+1.0, y, z+1.0,
+			x, y, z+1.0,
+			x, y, z,
 		)
 
 	default:

@@ -252,11 +252,11 @@ func CreateGridMesh() gl.Uint {
 		vertices = append(vertices, i, 0.0, g)
 
 		// XY
-		vertices = append(vertices, -g, i, -1.0)
-		vertices = append(vertices, g, i, -1.0)
+		vertices = append(vertices, -g, i, 0.0)
+		vertices = append(vertices, g, i, 0.0)
 
-		vertices = append(vertices, i, -g, -1.0)
-		vertices = append(vertices, i, g, -1.0)
+		vertices = append(vertices, i, -g, 0.0)
+		vertices = append(vertices, i, g, 0.0)
 
 		// YZ
 		vertices = append(vertices, 0.0, -g, i)
