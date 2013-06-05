@@ -50,13 +50,24 @@ func Start() {
 	for x := 0; x < cubed; x++ {
 		for z := 0; z < cubed; z++ {
 			for y := 0; y < cubed; y++ {
-				val := rand.Intn(2)
+				val := rand.Intn(5)
 
-				if val == 0 {
-					chunkMap[ChunkCoord{x, y, z}] = newCubeChunk()
-				} else {
-					chunkMap[ChunkCoord{x, y, z}] = newPyramidChunk()
+				var chunk *Chunk
+				switch val {
+				case 0:
+					chunk = newCubeChunk()
+				case 1:
+					chunk = newPyramidChunk(false)
+				case 2:
+					chunk = newPyramidChunk(true)
+				case 3:
+					chunk = newSphereChunk()
+				case 4:
+					chunk = newWireCubeChunk()
+				default:
+					chunk = newCubeChunk()
 				}
+				chunkMap[ChunkCoord{x, y, z}] = chunk
 			}
 		}
 	}
