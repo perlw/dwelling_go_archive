@@ -134,10 +134,6 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 	hitChunks := map[float64]ChunkCoord{}
 	intersectPoints := map[ChunkCoord]vector.Vector3f{}
 	for pos, chnk := range renderChunks {
-		if chnk.IsRebuilding {
-			continue
-		}
-
 		x := float64(pos.X * CHUNK_BASE)
 		y := float64(pos.Y * CHUNK_BASE)
 		z := float64(pos.Z * CHUNK_BASE)
@@ -226,19 +222,22 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 			}
 
 			if len(hitBlocks) > 0 {
-				blockKeys := make([]float64, len(hitBlocks))
-				t := 0
-				for k, _ := range hitBlocks {
-					blockKeys[t] = k
-					t++
+				if !chnk.IsRebuilding {
+					blockKeys := make([]float64, len(hitBlocks))
+					t := 0
+					for k, _ := range hitBlocks {
+						blockKeys[t] = k
+						t++
+					}
+					sort.Float64s(blockKeys)
+
+					k := blockKeys[0]
+					blockPos := hitBlocks[k]
+
+					delete(chnk.data, blockPos)
+					rebuildChunks[chnkPos] = chnk
+					fmt.Printf("Found hit in chunk %v\n", chnkPos)
 				}
-				sort.Float64s(blockKeys)
-
-				k := blockKeys[0]
-				blockPos := hitBlocks[k]
-
-				delete(chnk.data, blockPos)
-				rebuildChunks[chnkPos] = chnk
 
 				break
 			}
