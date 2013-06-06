@@ -11,7 +11,7 @@ func newPyramidChunk(invert bool) *Chunk {
 			for z := y; z < CHUNK_BASE-y; z++ {
 				index := BlockCoord{x, y, z}
 				if invert {
-					index.Y = CHUNK_BASE - index.Y
+					index.Y = CHUNK_BASE - index.Y - 1
 				}
 				chunk.data[index] = Block{}
 			}
