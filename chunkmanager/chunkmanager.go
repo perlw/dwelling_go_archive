@@ -128,12 +128,12 @@ func GetChunksAroundChunk(chunkPos ChunkCoord) [6]*Chunk {
 	return chunks
 }
 
-func ClickedInChunk(mx, my int, cam *camera.Camera) {
-	mouseNear, _ := matrix.Unproject(vector.Vector3f{float64(mx), float64(480 - my), 0.0}, cam.ViewMatrix, cam.ProjectionMatrix, 640, 480)
-	mouseFar, _ := matrix.Unproject(vector.Vector3f{float64(mx), float64(480 - my), 1.0}, cam.ViewMatrix, cam.ProjectionMatrix, 640, 480)
-	cam.MousePos = cam.Pos
-	cam.MouseDir = mouseFar.Sub(mouseNear).Normalize()
-
+// Traces a ray against a box.
+// Returns:
+// bool Intersected?
+// float64 Intersect distance
+// vector.Vector3f Intersection point
+func CastRayAtBox(rayOrig, rayDir, boxPos vector.Vector3f, boxSize, stepSize, maxDepth float64) (bool, float64, vector.Vector3f) {
 	planeNormals := [6]vector.Vector3f{
 		{0.0, 0.0, 1.0},
 		{0.0, 0.0, -1.0},
@@ -142,43 +142,53 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 		{0.0, 1.0, 0.0},
 		{0.0, -1.0, 0.0},
 	}
+
+	planePos := [6]vector.Vector3f{
+		{boxPos.X, boxPos.Y, boxPos.Z},
+		{boxPos.X, boxPos.Y, boxPos.Z + boxSize},
+		{boxPos.X + boxSize, boxPos.Y, boxPos.Z},
+		{boxPos.X, boxPos.Y, boxPos.Z},
+		{boxPos.X, boxPos.Y, boxPos.Z},
+		{boxPos.X, boxPos.Y + boxSize, boxPos.Z},
+	}
+
+	for depth := 0.0; depth < maxDepth; depth += stepSize {
+		inside := 0
+		rayStep := vector.Vector3f{}
+		for t := 0; t < 6; t++ {
+			d := -(vector.DotProduct(planeNormals[t], planePos[t]))
+			rayStep = rayOrig.Add(rayDir.MulScalar(depth))
+			deep := vector.DotProduct(planeNormals[t], rayStep) + d
+
+			if deep > 0.0 {
+				inside++
+			}
+		}
+		if inside >= 6 {
+			return true, depth, rayStep
+		}
+	}
+
+	return false, 0.0, vector.Vector3f{}
+}
+
+// Note: This should really be rebuilt to take steps first and check against cube map instead
+// of other way around.
+func ClickedInChunk(mx, my int, cam *camera.Camera) {
+	mouseNear, _ := matrix.Unproject(vector.Vector3f{float64(mx), float64(480 - my), 0.0}, cam.ViewMatrix, cam.ProjectionMatrix, 640, 480)
+	mouseFar, _ := matrix.Unproject(vector.Vector3f{float64(mx), float64(480 - my), 1.0}, cam.ViewMatrix, cam.ProjectionMatrix, 640, 480)
+	cam.MousePos = cam.Pos
+	cam.MouseDir = mouseFar.Sub(mouseNear).Normalize()
+
 	hitChunks := map[float64]ChunkCoord{}
 	intersectPoints := map[ChunkCoord]vector.Vector3f{}
 	for pos, chnk := range renderChunks {
-		x := float64(pos.X * CHUNK_BASE)
-		y := float64(pos.Y * CHUNK_BASE)
-		z := float64(pos.Z * CHUNK_BASE)
-		x1 := x + float64(CHUNK_BASE)
-		y1 := y + float64(CHUNK_BASE)
-		z1 := z + float64(CHUNK_BASE)
-		planePos := [6]vector.Vector3f{
-			{x, y, z},
-			{x, y, z1},
-			{x1, y, z},
-			{x, y, z},
-			{x, y, z},
-			{x, y1, z},
-		}
-
 		chnk.MouseHit = false
-		for dist := 0.0; dist < 128.0; dist += 1.0 {
-			inside := 0
-			rayPos := vector.Vector3f{}
-			for t := 0; t < 6; t++ {
-				d := -(vector.DotProduct(planeNormals[t], planePos[t]))
-				rayPos = cam.MousePos.Add(cam.MouseDir.MulScalar(dist))
-				deep := vector.DotProduct(planeNormals[t], rayPos) + d
-
-				if deep > 0.0 {
-					inside++
-				}
-			}
-			if inside >= 6 {
-				chnk.MouseHit = true
-				hitChunks[dist] = pos
-				intersectPoints[pos] = rayPos
-				break
-			}
+		boxPos := vector.Vector3f{float64(pos.X * CHUNK_BASE), float64(pos.Y * CHUNK_BASE), float64(pos.Z * CHUNK_BASE)}
+		if hit, dist, hitPoint := CastRayAtBox(cam.MousePos, cam.MouseDir, boxPos, float64(CHUNK_BASE), 1.0, 128.0); hit {
+			chnk.MouseHit = true
+			hitChunks[dist] = pos
+			intersectPoints[pos] = hitPoint
 		}
 	}
 
@@ -196,38 +206,18 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 			chnk := chunkMap[chnkPos]
 			hitBlocks := map[float64]BlockCoord{}
 			for pos, blk := range chnk.data {
-				if blk.visible {
-					x := float64((chnkPos.X * CHUNK_BASE) + pos.X)
-					y := float64((chnkPos.Y * CHUNK_BASE) + pos.Y)
-					z := float64((chnkPos.Z * CHUNK_BASE) + pos.Z)
-					x1 := x + 1.0
-					y1 := y + 1.0
-					z1 := z + 1.0
-					planePos := [6]vector.Vector3f{
-						{x, y, z},
-						{x, y, z1},
-						{x1, y, z},
-						{x, y, z},
-						{x, y, z},
-						{x, y1, z},
+				// Note: Checking blk.visible seems to be reason for skipping to other side
+				// at times.
+				if true || blk.visible {
+					boxPos := vector.Vector3f{
+						float64(chnkPos.X*CHUNK_BASE + pos.X),
+						float64(chnkPos.Y*CHUNK_BASE + pos.Y),
+						float64(chnkPos.Z*CHUNK_BASE + pos.Z),
 					}
-
 					rayOrig := intersectPoints[chnkPos]
-					for dist := 0.0; dist < 16.0; dist += 0.5 {
-						inside := 0
-						for t := 0; t < 6; t++ {
-							d := -(vector.DotProduct(planeNormals[t], planePos[t]))
-							rayPos := rayOrig.Add(cam.MouseDir.MulScalar(dist))
-							deep := vector.DotProduct(planeNormals[t], rayPos) + d
-
-							if deep > 0.0 {
-								inside++
-							}
-						}
-						if inside >= 6 {
-							hitBlocks[dist] = pos
-							break
-						}
+					if hit, dist, _ := CastRayAtBox(rayOrig, cam.MouseDir, boxPos, 1.0, 0.5, 16.0); hit {
+						hitBlocks[dist] = pos
+						break
 					}
 				}
 			}
