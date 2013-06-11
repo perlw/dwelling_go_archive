@@ -5,8 +5,9 @@ import (
 	"dwelling/math/matrix"
 	"dwelling/math/vector"
 	"fmt"
+	"math"
 	"math/rand"
-	"sort"
+	//"sort"
 	"time"
 )
 
@@ -172,75 +173,110 @@ func CastRayAtBox(rayOrig, rayDir, boxPos vector.Vector3f, boxSize, stepSize, ma
 	return false, 0.0, vector.Vector3f{}
 }
 
-// Note: This should really be rebuilt to take steps first and check against cube map instead
-// of other way around.
+// Checks if point is inside box
+// Returns:
+// bool In box?
+func PointInBox(point, boxPos vector.Vector3f, boxSize float64) bool {
+	planeNormals := [6]vector.Vector3f{
+		{0.0, 0.0, 1.0},
+		{0.0, 0.0, -1.0},
+		{-1.0, 0.0, 0.0},
+		{1.0, 0.0, 0.0},
+		{0.0, 1.0, 0.0},
+		{0.0, -1.0, 0.0},
+	}
+
+	planePos := [6]vector.Vector3f{
+		{boxPos.X, boxPos.Y, boxPos.Z},
+		{boxPos.X, boxPos.Y, boxPos.Z + boxSize},
+		{boxPos.X + boxSize, boxPos.Y, boxPos.Z},
+		{boxPos.X, boxPos.Y, boxPos.Z},
+		{boxPos.X, boxPos.Y, boxPos.Z},
+		{boxPos.X, boxPos.Y + boxSize, boxPos.Z},
+	}
+
+	inside := 0
+	for t := 0; t < 6; t++ {
+		d := -(vector.DotProduct(planeNormals[t], planePos[t]))
+		deep := vector.DotProduct(planeNormals[t], point) + d
+
+		if deep > 0.0 {
+			inside++
+		}
+	}
+	if inside >= 6 {
+		return true
+	}
+
+	return false
+}
+
+// TODO: Optmise chunk lookup by adding checked chunks to map copy and check against to avoid double and triple checking
 func ClickedInChunk(mx, my int, cam *camera.Camera) {
 	mouseNear, _ := matrix.Unproject(vector.Vector3f{float64(mx), float64(480 - my), 0.0}, cam.ViewMatrix, cam.ProjectionMatrix, 640, 480)
 	mouseFar, _ := matrix.Unproject(vector.Vector3f{float64(mx), float64(480 - my), 1.0}, cam.ViewMatrix, cam.ProjectionMatrix, 640, 480)
 	cam.MousePos = cam.Pos
 	cam.MouseDir = mouseFar.Sub(mouseNear).Normalize()
 
-	hitChunks := map[float64]ChunkCoord{}
-	intersectPoints := map[ChunkCoord]vector.Vector3f{}
-	for pos, chnk := range renderChunks {
+	for _, chnk := range renderChunks {
 		chnk.MouseHit = false
-		boxPos := vector.Vector3f{float64(pos.X * CHUNK_BASE), float64(pos.Y * CHUNK_BASE), float64(pos.Z * CHUNK_BASE)}
-		if hit, dist, hitPoint := CastRayAtBox(cam.MousePos, cam.MouseDir, boxPos, float64(CHUNK_BASE), 1.0, 128.0); hit {
-			chnk.MouseHit = true
-			hitChunks[dist] = pos
-			intersectPoints[pos] = hitPoint
-		}
 	}
 
-	if len(hitChunks) > 0 {
-		chunkKeys := make([]float64, len(hitChunks))
-		t := 0
-		for k, _ := range hitChunks {
-			chunkKeys[t] = k
-			t++
+	fmt.Println("---")
+	chunkBase := float64(CHUNK_BASE)
+	for dist := 0.0; dist < 128.0; dist += 8.0 {
+		rayStep := cam.MousePos.Add(cam.MouseDir.MulScalar(dist))
+
+		pos := ChunkCoord{
+			int(math.Trunc(rayStep.X / chunkBase)),
+			int(math.Trunc(rayStep.Y / chunkBase)),
+			int(math.Trunc(rayStep.Z / chunkBase)),
 		}
-		sort.Float64s(chunkKeys)
 
-		for t := 0; t < len(chunkKeys); t++ {
-			chnkPos := hitChunks[chunkKeys[t]]
-			chnk := chunkMap[chnkPos]
-			hitBlocks := map[float64]BlockCoord{}
-			for pos, blk := range chnk.data {
-				// Note: Checking blk.visible seems to be reason for skipping to other side
-				// at times.
-				if true || blk.visible {
-					boxPos := vector.Vector3f{
-						float64(chnkPos.X*CHUNK_BASE + pos.X),
-						float64(chnkPos.Y*CHUNK_BASE + pos.Y),
-						float64(chnkPos.Z*CHUNK_BASE + pos.Z),
+		if chnk, ok := renderChunks[pos]; ok {
+			fmt.Printf("Found potential chunk at %v...", pos)
+			boxPos := vector.Vector3f{float64(pos.X * CHUNK_BASE), float64(pos.Y * CHUNK_BASE), float64(pos.Z * CHUNK_BASE)}
+			boxSize := chunkBase
+			if PointInBox(rayStep, boxPos, boxSize) {
+				fmt.Printf("hit!\n")
+				chnk.MouseHit = true
+
+				startDist := dist - 8.0
+				for dist := startDist; dist < startDist+24.0; dist += 0.5 {
+					rayStep := cam.MousePos.Add(cam.MouseDir.MulScalar(dist))
+					blkPos := BlockCoord{
+						int(math.Trunc(rayStep.X)) - (pos.X * CHUNK_BASE),
+						int(math.Trunc(rayStep.Y)) - (pos.Y * CHUNK_BASE),
+						int(math.Trunc(rayStep.Z)) - (pos.Z * CHUNK_BASE),
 					}
-					rayOrig := intersectPoints[chnkPos]
-					if hit, dist, _ := CastRayAtBox(rayOrig, cam.MouseDir, boxPos, 1.0, 0.5, 16.0); hit {
-						hitBlocks[dist] = pos
-						break
+					// Note: Checking blk.visible seems to be reason for skipping to other side
+					// at times.
+					if blk, ok := chnk.data[blkPos]; ok {
+						if blk.visible {
+							fmt.Printf("\tFound potential block at %v...", blkPos)
+
+							boxPos := vector.Vector3f{
+								float64(pos.X*CHUNK_BASE + blkPos.X),
+								float64(pos.Y*CHUNK_BASE + blkPos.Y),
+								float64(pos.Z*CHUNK_BASE + blkPos.Z),
+							}
+							if PointInBox(rayStep, boxPos, 1.0) {
+								fmt.Println("hit!\n")
+
+								if !chnk.IsRebuilding {
+									delete(chnk.data, blkPos)
+									rebuildChunks[pos] = chnk
+								}
+
+								return
+							} else {
+								fmt.Println("nope...\n")
+							}
+						}
 					}
 				}
-			}
-
-			if len(hitBlocks) > 0 {
-				if !chnk.IsRebuilding {
-					blockKeys := make([]float64, len(hitBlocks))
-					t := 0
-					for k, _ := range hitBlocks {
-						blockKeys[t] = k
-						t++
-					}
-					sort.Float64s(blockKeys)
-
-					k := blockKeys[0]
-					blockPos := hitBlocks[k]
-
-					delete(chnk.data, blockPos)
-					rebuildChunks[chnkPos] = chnk
-					fmt.Printf("Found hit in chunk %v\n", chnkPos)
-				}
-
-				break
+			} else {
+				fmt.Println("nope...\n")
 			}
 		}
 	}
