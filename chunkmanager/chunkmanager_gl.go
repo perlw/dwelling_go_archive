@@ -19,9 +19,9 @@ func Render(program gl.Uint, cam *camera.Camera) {
 	gl.GLStringFree(mouseHit)
 
 	for pos, chnk := range renderChunks {
-		posx := float64(pos.X * CHUNK_BASE)
-		posy := float64(pos.Y * CHUNK_BASE)
-		posz := float64(pos.Z * CHUNK_BASE)
+		posx := float64(pos.X * ChunkBase)
+		posy := float64(pos.Y * ChunkBase)
+		posz := float64(pos.Z * ChunkBase)
 
 		modelMatrix := matrix.NewIdentityMatrix()
 		modelMatrix.Translate(posx, posy, posz)
@@ -33,9 +33,9 @@ func Render(program gl.Uint, cam *camera.Camera) {
 
 	if debugMode {
 		for pos, chnk := range visibleChunks {
-			posx := float64(pos.X * CHUNK_BASE)
-			posy := float64(pos.Y * CHUNK_BASE)
-			posz := float64(pos.Z * CHUNK_BASE)
+			posx := float64(pos.X * ChunkBase)
+			posy := float64(pos.Y * ChunkBase)
+			posz := float64(pos.Z * ChunkBase)
 
 			modelMatrix := matrix.NewIdentityMatrix()
 			modelMatrix.Translate(posx, posy, posz)

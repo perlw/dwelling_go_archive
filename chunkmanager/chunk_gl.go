@@ -126,7 +126,7 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 		sides := 0
 		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y, pos.Z + 1}]; !ok {
 			skip := false
-			if pos.Z == CHUNK_BASE-1 && chunks[FRONT] != nil {
+			if pos.Z == ChunkBase-1 && chunks[FRONT] != nil {
 				if _, ok := chunks[FRONT].data[BlockCoord{pos.X, pos.Y, 0}]; ok {
 					skip = true
 				}
@@ -140,7 +140,7 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y, pos.Z - 1}]; !ok {
 			skip := false
 			if pos.Z == 0 && chunks[BACK] != nil {
-				if _, ok := chunks[BACK].data[BlockCoord{pos.X, pos.Y, CHUNK_BASE - 1}]; ok {
+				if _, ok := chunks[BACK].data[BlockCoord{pos.X, pos.Y, ChunkBase - 1}]; ok {
 					skip = true
 				}
 			}
@@ -153,7 +153,7 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 		if _, ok := chunk.data[BlockCoord{pos.X - 1, pos.Y, pos.Z}]; !ok {
 			skip := false
 			if pos.X == 0 && chunks[LEFT] != nil {
-				if _, ok := chunks[LEFT].data[BlockCoord{CHUNK_BASE - 1, pos.Y, pos.Z}]; ok {
+				if _, ok := chunks[LEFT].data[BlockCoord{ChunkBase - 1, pos.Y, pos.Z}]; ok {
 					skip = true
 				}
 			}
@@ -165,7 +165,7 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X + 1, pos.Y, pos.Z}]; !ok {
 			skip := false
-			if pos.X == CHUNK_BASE-1 && chunks[RIGHT] != nil {
+			if pos.X == ChunkBase-1 && chunks[RIGHT] != nil {
 				if _, ok := chunks[RIGHT].data[BlockCoord{0, pos.Y, pos.Z}]; ok {
 					skip = true
 				}
@@ -178,7 +178,7 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y + 1, pos.Z}]; !ok {
 			skip := false
-			if pos.Y == CHUNK_BASE-1 && chunks[TOP] != nil {
+			if pos.Y == ChunkBase-1 && chunks[TOP] != nil {
 				if _, ok := chunks[TOP].data[BlockCoord{pos.X, 0, pos.Z}]; ok {
 					skip = true
 				}
@@ -192,7 +192,7 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y - 1, pos.Z}]; !ok {
 			skip := false
 			if pos.Y == 0 && chunks[BOTTOM] != nil {
-				if _, ok := chunks[BOTTOM].data[BlockCoord{pos.X, CHUNK_BASE - 1, pos.Z}]; ok {
+				if _, ok := chunks[BOTTOM].data[BlockCoord{pos.X, ChunkBase - 1, pos.Z}]; ok {
 					skip = true
 				}
 			}
@@ -230,11 +230,11 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 
 var facePos = [6]vector.Vector3f{
 	{0.0, 0.0, 0.0},
-	{0.0, 0.0, 0.0 + float64(CHUNK_BASE)},
-	{0.0 + float64(CHUNK_BASE), 0.0, 0.0},
+	{0.0, 0.0, 0.0 + float64(ChunkBase)},
+	{0.0 + float64(ChunkBase), 0.0, 0.0},
 	{0.0, 0.0, 0.0},
 	{0.0, 0.0, 0.0},
-	{0.0, 0.0 + float64(CHUNK_BASE), 0.0},
+	{0.0, 0.0 + float64(ChunkBase), 0.0},
 }
 
 func (chunk *Chunk) RenderChunk(normalId, mouseHitId gl.Int, cam vector.Vector3f, world *matrix.Matrix, wireframe bool, chunkPos vector.Vector3f) {

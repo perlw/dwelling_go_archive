@@ -7,11 +7,10 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
-	//"sort"
 	"time"
 )
 
-const CHUNK_BASE int = 16
+const ChunkBase int = 16
 
 type ChunkCoord struct {
 	X, Y, Z int
@@ -212,6 +211,7 @@ func PointInBox(point, boxPos vector.Vector3f, boxSize float64) bool {
 }
 
 // TODO: Optmise chunk lookup by adding checked chunks to map copy and check against to avoid double and triple checking
+// TODO: Rename func
 func ClickedInChunk(mx, my int, cam *camera.Camera) {
 	mouseNear, _ := matrix.Unproject(vector.Vector3f{float64(mx), float64(480 - my), 0.0}, cam.ViewMatrix, cam.ProjectionMatrix, 640, 480)
 	mouseFar, _ := matrix.Unproject(vector.Vector3f{float64(mx), float64(480 - my), 1.0}, cam.ViewMatrix, cam.ProjectionMatrix, 640, 480)
@@ -223,7 +223,7 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 	}
 
 	fmt.Println("---")
-	chunkBase := float64(CHUNK_BASE)
+	chunkBase := float64(ChunkBase)
 	for dist := 0.0; dist < 128.0; dist += 8.0 {
 		rayStep := cam.MousePos.Add(cam.MouseDir.MulScalar(dist))
 
@@ -235,7 +235,7 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 
 		if chnk, ok := renderChunks[pos]; ok {
 			fmt.Printf("Found potential chunk at %v...", pos)
-			boxPos := vector.Vector3f{float64(pos.X * CHUNK_BASE), float64(pos.Y * CHUNK_BASE), float64(pos.Z * CHUNK_BASE)}
+			boxPos := vector.Vector3f{float64(pos.X * ChunkBase), float64(pos.Y * ChunkBase), float64(pos.Z * ChunkBase)}
 			boxSize := chunkBase
 			if PointInBox(rayStep, boxPos, boxSize) {
 				fmt.Printf("hit!\n")
@@ -245,9 +245,9 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 				for dist := startDist; dist < startDist+24.0; dist += 0.5 {
 					rayStep := cam.MousePos.Add(cam.MouseDir.MulScalar(dist))
 					blkPos := BlockCoord{
-						int(math.Trunc(rayStep.X)) - (pos.X * CHUNK_BASE),
-						int(math.Trunc(rayStep.Y)) - (pos.Y * CHUNK_BASE),
-						int(math.Trunc(rayStep.Z)) - (pos.Z * CHUNK_BASE),
+						int(math.Trunc(rayStep.X)) - (pos.X * ChunkBase),
+						int(math.Trunc(rayStep.Y)) - (pos.Y * ChunkBase),
+						int(math.Trunc(rayStep.Z)) - (pos.Z * ChunkBase),
 					}
 					// Note: Checking blk.visible seems to be reason for skipping to other side
 					// at times.
@@ -256,9 +256,9 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 							fmt.Printf("\tFound potential block at %v...", blkPos)
 
 							boxPos := vector.Vector3f{
-								float64(pos.X*CHUNK_BASE + blkPos.X),
-								float64(pos.Y*CHUNK_BASE + blkPos.Y),
-								float64(pos.Z*CHUNK_BASE + blkPos.Z),
+								float64(pos.X*ChunkBase + blkPos.X),
+								float64(pos.Y*ChunkBase + blkPos.Y),
+								float64(pos.Z*ChunkBase + blkPos.Z),
 							}
 							if PointInBox(rayStep, boxPos, 1.0) {
 								fmt.Println("hit!\n")
@@ -334,10 +334,10 @@ func updateRenderList(cam *camera.Camera) {
 	renderChunks = map[ChunkCoord]*Chunk{}
 
 	for pos := range visibleChunks {
-		posx := float64(pos.X * CHUNK_BASE)
-		posy := float64(pos.Y * CHUNK_BASE)
-		posz := float64(pos.Z * CHUNK_BASE)
-		if cam.CubeInView(vector.Vector3f{posx, posy, posz}, float64(CHUNK_BASE)) != 2 {
+		posx := float64(pos.X * ChunkBase)
+		posy := float64(pos.Y * ChunkBase)
+		posz := float64(pos.Z * ChunkBase)
+		if cam.CubeInView(vector.Vector3f{posx, posy, posz}, float64(ChunkBase)) != 2 {
 			renderChunks[pos] = visibleChunks[pos]
 		}
 	}
