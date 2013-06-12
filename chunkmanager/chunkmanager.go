@@ -21,7 +21,7 @@ type BlockCoord struct {
 }
 
 type Chunk struct {
-	data         map[BlockCoord]Block
+	data         map[BlockCoord]*Block
 	mesh         ChunkMesh
 	IsLoaded     bool
 	IsSetup      bool
