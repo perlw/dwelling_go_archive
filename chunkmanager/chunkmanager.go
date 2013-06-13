@@ -77,32 +77,6 @@ func SetDebug(mode bool) {
 	debugMode = mode
 }
 
-func DebugDeleteRandomBlock() {
-	deleted := false
-
-	for !deleted {
-		cx := rand.Intn(4)
-		cy := rand.Intn(4)
-		cz := rand.Intn(4)
-
-		if chunk, ok := chunkMap[ChunkCoord{cx, cy, cz}]; ok {
-			x := rand.Intn(16)
-			y := rand.Intn(16)
-			z := rand.Intn(16)
-
-			if _, ok := chunk.data[BlockCoord{x, y, z}]; ok {
-				fmt.Printf("Deleted block at [%d,%d,%d]:[%d,%d,%d]\n", cx, cy, cz, x, y, z)
-
-				delete(chunk.data, BlockCoord{x, y, z})
-				rebuildChunks[ChunkCoord{cx, cy, cz}] = chunk
-
-				deleted = true
-			}
-		}
-	}
-
-}
-
 func GetChunksAroundChunk(chunkPos ChunkCoord) [6]*Chunk {
 	chunks := [6]*Chunk{nil, nil, nil, nil, nil, nil}
 

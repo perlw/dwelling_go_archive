@@ -91,9 +91,8 @@ func main() {
 	camCh := make(chan bool)
 	debugCh := make(chan bool)
 	logicCh := make(chan bool)
-	delCh := make(chan bool)
 	exitCh := make(chan bool)
-	go logicLoop(camCh, debugCh, logicCh, delCh, exitCh, &cam)
+	go logicLoop(camCh, debugCh, logicCh, exitCh, &cam)
 
 	gl.ClearColor(0.25, 0.25, 0.25, 1.0)
 	currentTick := time.Now().UnixNano() / 1000000.0
@@ -115,8 +114,6 @@ func main() {
 			}
 		case <-logicCh:
 			chunkmanager.Update(&cam)
-		case <-delCh:
-			chunkmanager.DebugDeleteRandomBlock()
 		case <-exitCh:
 			running = false
 		default:
@@ -192,7 +189,7 @@ func main() {
 	}
 }
 
-func logicLoop(camCh chan<- bool, debugCh chan<- bool, logicCh chan<- bool, delCh chan<- bool, exitCh chan<- bool, cam *camera.Camera) {
+func logicLoop(camCh chan<- bool, debugCh chan<- bool, logicCh chan<- bool, exitCh chan<- bool, cam *camera.Camera) {
 	currentTick := time.Now().UnixNano() / 1000000.0
 
 	rotSpeed := 1.0
@@ -288,10 +285,6 @@ func logicLoop(camCh chan<- bool, debugCh chan<- bool, logicCh chan<- bool, delC
 				}
 
 				if debugMode {
-					if glfw.Key(glfw.KeyDel) == glfw.KeyPress {
-						delCh <- true
-					}
-
 					if glfw.Key('F') == glfw.KeyPress {
 						cam.UpdateFrustum()
 					}
