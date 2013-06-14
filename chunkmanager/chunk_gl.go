@@ -106,8 +106,6 @@ func createMeshBuffer(faceBuffer *[]float32, size int) gl.Uint {
 	gl.BindBuffer(gl.ARRAY_BUFFER, buffer)
 	gl.BufferData(gl.ARRAY_BUFFER, gl.Sizeiptr(sizeFloat*size), gl.Pointer(&bufferPtr[0]), gl.STATIC_DRAW)
 
-	gl.BindBuffer(gl.ARRAY_BUFFER, buffer)
-	gl.EnableVertexAttribArray(0)
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
 	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 
@@ -214,9 +212,17 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 		chunk.mesh.numVertices[t] = gl.Sizei(len(vertexBuffers[t]))
 		if chunk.mesh.numVertices[t] > 0 {
 			if chunk.mesh.vertexBufferIds[t] > 0 {
-				gl.DeleteBuffers(1, &chunk.mesh.vertexBufferIds[t])
+				// Refactor
+				sizeFloat := int(unsafe.Sizeof([1]float32{}))
+				size := gl.Sizeiptr(sizeFloat * len(vertexBuffers[t]))
+				gl.BindBuffer(gl.ARRAY_BUFFER, chunk.mesh.vertexBufferIds[t])
+				gl.BufferData(gl.ARRAY_BUFFER, size, gl.Pointer(&vertexBuffers[t][0]), gl.STATIC_DRAW)
+
+				gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
+				gl.BindBuffer(gl.ARRAY_BUFFER, 0)
+			} else {
+				chunk.mesh.vertexBufferIds[t] = createMeshBuffer(&vertexBuffers[t], len(vertexBuffers[t]))
 			}
-			chunk.mesh.vertexBufferIds[t] = createMeshBuffer(&vertexBuffers[t], len(vertexBuffers[t]))
 		}
 	}
 
@@ -269,6 +275,6 @@ func (chunk *Chunk) renderMeshBuffer(side int, wireframe bool) {
 		gl.DrawArrays(gl.LINES, 0, chunk.mesh.numVertices[side])
 	} else {
 		gl.DrawArrays(gl.TRIANGLES, 0, chunk.mesh.numVertices[side])
-
 	}
+	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 }

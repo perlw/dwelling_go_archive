@@ -49,6 +49,7 @@ func main() {
 	gl.ClearColor(0.5, 0.5, 0.5, 1.0)
 	gl.ClearDepth(1)
 	gl.DepthFunc(gl.LEQUAL)
+	gl.EnableVertexAttribArray(0)
 	gl.Viewport(0, 0, 640, 480)
 
 	cam.ProjectionMatrix = matrix.NewPerspectiveMatrix(53.13, 640.0/480.0, 1.0, 1000.0)
