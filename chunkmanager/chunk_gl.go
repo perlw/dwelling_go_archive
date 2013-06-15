@@ -27,6 +27,7 @@ var chunkNormals = [6]vector.Vector3f{
 }
 
 type ChunkMesh struct {
+	vertexObject    gl.Uint
 	vertexBufferIds [6]gl.Uint
 	numVertices     [6]gl.Sizei
 }
@@ -106,14 +107,17 @@ func createMeshBuffer(faceBuffer *[]float32, size int) gl.Uint {
 	gl.BindBuffer(gl.ARRAY_BUFFER, buffer)
 	gl.BufferData(gl.ARRAY_BUFFER, gl.Sizeiptr(sizeFloat*size), gl.Pointer(&bufferPtr[0]), gl.STATIC_DRAW)
 
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
-	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
-
 	return buffer
 }
 
 func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 	chunks := GetChunksAroundChunk(chunkPos)
+
+	if chunk.mesh.vertexObject == 0 {
+		gl.GenVertexArrays(1, &chunk.mesh.vertexObject)
+		gl.EnableVertexAttribArray(0)
+	}
+	gl.BindVertexArray(chunk.mesh.vertexObject)
 
 	vertexBuffers := [6][]float32{}
 	for pos := range chunk.data {
@@ -216,10 +220,10 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 				sizeFloat := int(unsafe.Sizeof([1]float32{}))
 				size := gl.Sizeiptr(sizeFloat * len(vertexBuffers[t]))
 				gl.BindBuffer(gl.ARRAY_BUFFER, chunk.mesh.vertexBufferIds[t])
+				gl.BufferData(gl.ARRAY_BUFFER, size, nil, gl.STATIC_DRAW)
 				gl.BufferData(gl.ARRAY_BUFFER, size, gl.Pointer(&vertexBuffers[t][0]), gl.STATIC_DRAW)
-
 				gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
-				gl.BindBuffer(gl.ARRAY_BUFFER, 0)
+
 			} else {
 				chunk.mesh.vertexBufferIds[t] = createMeshBuffer(&vertexBuffers[t], len(vertexBuffers[t]))
 			}
@@ -246,6 +250,9 @@ var facePos = [6]vector.Vector3f{
 func (chunk *Chunk) RenderChunk(normalId, mouseHitId gl.Int, cam vector.Vector3f, world *matrix.Matrix, wireframe bool, chunkPos vector.Vector3f) {
 	invModel, _ := matrix.InvertMatrix(world)
 	invModel = invModel.Transpose()
+
+	gl.BindVertexArray(chunk.mesh.vertexObject)
+
 	for t := 0; t < 6; t++ {
 		if chunk.mesh.numVertices[t] > 0 {
 			normal := chunkNormals[t]

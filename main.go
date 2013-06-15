@@ -60,9 +60,9 @@ func main() {
 	cam.UpdatePVMatrix()
 	cam.UpdateFrustum()
 
-	var vao gl.Uint
-	gl.GenVertexArrays(1, &vao)
-	gl.BindVertexArray(vao)
+	var debugVao gl.Uint
+	gl.GenVertexArrays(1, &debugVao)
+	gl.BindVertexArray(debugVao)
 
 	chunkmanager.Start()
 
@@ -127,6 +127,8 @@ func main() {
 		chunkmanager.Render(program, &cam)
 
 		if debugMode {
+			gl.BindVertexArray(debugVao)
+
 			gl.Uniform1i(skipLightId, 1)
 
 			// Render frustum
