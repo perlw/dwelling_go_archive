@@ -109,8 +109,8 @@ func createMeshBuffer(faceBuffer *[]float32, size int) gl.Uint {
 	return buffer
 }
 
-func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
-	chunks := GetChunksAroundChunk(chunkPos)
+func (chunk *Chunk) UpdateChunkMesh() {
+	chunks := GetChunksAroundChunk(chunk.position)
 
 	vertexBuffers := [6][]float32{}
 	for pos := range chunk.data {

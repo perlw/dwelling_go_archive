@@ -13,7 +13,10 @@ func newPyramidChunk(invert bool) *Chunk {
 				if invert {
 					index.Y = ChunkBase - index.Y - 1
 				}
-				chunk.data[index] = &Block{}
+				chunk.data[index] = &Block{
+					visible:  false,
+					position: index,
+				}
 			}
 		}
 	}
@@ -32,7 +35,10 @@ func newCubeChunk() *Chunk {
 		for x := 0; x < ChunkBase; x++ {
 			for z := 0; z < ChunkBase; z++ {
 				index := BlockCoord{x, y, z}
-				chunk.data[index] = &Block{}
+				chunk.data[index] = &Block{
+					visible:  false,
+					position: index,
+				}
 			}
 		}
 	}
@@ -57,7 +63,10 @@ func newSphereChunk() *Chunk {
 				dist := math.Sqrt(xx + yy + zz)
 				if dist > halfChunk-1.0 && dist <= halfChunk {
 					index := BlockCoord{x, y, z}
-					chunk.data[index] = &Block{}
+					chunk.data[index] = &Block{
+						visible:  false,
+						position: index,
+					}
 				}
 			}
 		}
@@ -81,7 +90,10 @@ func newWireCubeChunk() *Chunk {
 				cc := ((z+1)%ChunkBase-1 == 0 || (z+1)%ChunkBase == 0)
 				if (aa && bb) || (bb && cc) || (aa && cc) {
 					index := BlockCoord{x, y, z}
-					chunk.data[index] = &Block{}
+					chunk.data[index] = &Block{
+						visible:  false,
+						position: index,
+					}
 				}
 			}
 		}

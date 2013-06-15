@@ -27,10 +27,12 @@ type Chunk struct {
 	IsSetup      bool
 	IsRebuilding bool
 	MouseHit     bool
+	position     ChunkCoord
 }
 
 type Block struct {
-	visible bool
+	visible  bool
+	position BlockCoord
 }
 
 var chunkMap = map[ChunkCoord]*Chunk{}
@@ -67,7 +69,8 @@ func Start() {
 				default:
 					chunk = newCubeChunk()
 				}
-				chunkMap[ChunkCoord{x, y, z}] = chunk
+				chunk.position = ChunkCoord{x, y, z}
+				chunkMap[chunk.position] = chunk
 			}
 		}
 	}
@@ -282,9 +285,9 @@ func updateSetupList() {
 }
 
 func updateRebuildList() {
-	for pos, chnk := range rebuildChunks {
+	for _, chnk := range rebuildChunks {
 		chnk.IsRebuilding = true
-		chnk.UpdateChunkMesh(pos)
+		chnk.UpdateChunkMesh()
 		chnk.IsRebuilding = false
 	}
 

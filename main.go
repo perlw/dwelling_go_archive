@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-var cam = camera.Camera{Pos: vector.Vector3f{-48.0, 32.0, -48.0}, Rot: vector.Vector3f{0.0, 135, 0.0}}
+var cam = camera.Camera{Pos: vector.Vector3f{X: -48.0, Y: 32.0, Z: -48.0}, Rot: vector.Vector3f{X: 0.0, Y: 135, Z: 0.0}}
 
 func main() {
 	runtime.LockOSThread()
@@ -132,9 +132,9 @@ func main() {
 			gl.Uniform1i(skipLightId, 1)
 
 			// Render frustum
-			glNormal := vector.Vector3f{0.0, 1.0, 0.0}.ToGL()
+			glNormal := vector.Vector3f{X: 0.0, Y: 1.0, Z: 0.0}.ToGL()
 			gl.Uniform3fv(normalId, 1, &glNormal[0])
-			glFlatColor := vector.Vector3f{0.5, 0.5, 1.0}.ToGL()
+			glFlatColor := vector.Vector3f{X: 0.5, Y: 0.5, Z: 1.0}.ToGL()
 			gl.Uniform3fv(flatColorId, 1, &glFlatColor[0])
 
 			modelMatrix := matrix.NewIdentityMatrix()
@@ -147,7 +147,7 @@ func main() {
 			// Render frustum
 
 			// Render Mouse ray
-			glFlatColor = vector.Vector3f{1.0, 0.5, 0.5}.ToGL()
+			glFlatColor = vector.Vector3f{X: 1.0, Y: 0.5, Z: 0.5}.ToGL()
 			gl.Uniform3fv(flatColorId, 1, &glFlatColor[0])
 
 			mouseBuffer := camera.CreateMouseMesh(&cam)
@@ -161,7 +161,7 @@ func main() {
 			// Render Mouse ray
 
 			// Render Grid
-			glFlatColor = vector.Vector3f{0.0, 0.0, 0.0}.ToGL()
+			glFlatColor = vector.Vector3f{X: 0.0, Y: 0.0, Z: 0.0}.ToGL()
 			gl.Uniform3fv(flatColorId, 1, &glFlatColor[0])
 
 			modelMatrix = matrix.NewIdentityMatrix()
