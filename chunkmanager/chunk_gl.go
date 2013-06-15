@@ -217,16 +217,12 @@ func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 		chunk.mesh.numVertices[t] = gl.Sizei(len(vertexBuffers[t]))
 		if chunk.mesh.numVertices[t] > 0 {
 			if chunk.mesh.vertexBufferIds[t] > 0 {
-				/*// Refactor
+				// Refactor
 				sizeFloat := int(unsafe.Sizeof([1]float32{}))
 				size := gl.Sizeiptr(sizeFloat * len(vertexBuffers[t]))
 				gl.BindBuffer(gl.ARRAY_BUFFER, chunk.mesh.vertexBufferIds[t])
-				gl.BufferData(gl.ARRAY_BUFFER, size, nil, gl.STATIC_DRAW)
+				gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
 				gl.BufferData(gl.ARRAY_BUFFER, size, gl.Pointer(&vertexBuffers[t][0]), gl.STATIC_DRAW)
-				gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)*/
-				chunk.mesh.newVertexBufferIds[t] = createMeshBuffer(&vertexBuffers[t], len(vertexBuffers[t]))
-				gl.DeleteBuffers(1, &chunk.mesh.vertexBufferIds[t])
-				chunk.mesh.vertexBufferIds[t] = chunk.mesh.newVertexBufferIds[t]
 			} else {
 				chunk.mesh.vertexBufferIds[t] = createMeshBuffer(&vertexBuffers[t], len(vertexBuffers[t]))
 			}
