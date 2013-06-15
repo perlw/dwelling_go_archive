@@ -7,7 +7,21 @@ import (
 	gl "github.com/chsc/gogl/gl33"
 )
 
+var worldVAO gl.Uint = 0
+
+func setRendererData() {
+	if worldVAO == 0 {
+		gl.GenVertexArrays(1, &worldVAO)
+		gl.BindVertexArray(worldVAO)
+		gl.EnableVertexAttribArray(0)
+	} else {
+		gl.BindVertexArray(worldVAO)
+	}
+}
+
 func Render(program gl.Uint, cam *camera.Camera) {
+	setRendererData()
+
 	model := gl.GLString("model")
 	modelId := gl.GetUniformLocation(program, model)
 	gl.GLStringFree(model)

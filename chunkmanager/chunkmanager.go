@@ -257,6 +257,9 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 }
 
 func Update(cam *camera.Camera) {
+	// Note: Not optimal
+	setRendererData()
+
 	updateSetupList()
 	updateRebuildList()
 	updateVisibilityList(cam)

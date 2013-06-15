@@ -27,10 +27,8 @@ var chunkNormals = [6]vector.Vector3f{
 }
 
 type ChunkMesh struct {
-	vertexObject       gl.Uint
-	vertexBufferIds    [6]gl.Uint
-	newVertexBufferIds [6]gl.Uint
-	numVertices        [6]gl.Sizei
+	vertexBufferIds [6]gl.Uint
+	numVertices     [6]gl.Sizei
 }
 
 func appendChunkFace(faceBuffer *[]float32, x, y, z float32, face int) {
@@ -113,12 +111,6 @@ func createMeshBuffer(faceBuffer *[]float32, size int) gl.Uint {
 
 func (chunk *Chunk) UpdateChunkMesh(chunkPos ChunkCoord) {
 	chunks := GetChunksAroundChunk(chunkPos)
-
-	if chunk.mesh.vertexObject == 0 {
-		gl.GenVertexArrays(1, &chunk.mesh.vertexObject)
-		gl.EnableVertexAttribArray(0)
-	}
-	gl.BindVertexArray(chunk.mesh.vertexObject)
 
 	vertexBuffers := [6][]float32{}
 	for pos := range chunk.data {
@@ -249,8 +241,6 @@ var facePos = [6]vector.Vector3f{
 func (chunk *Chunk) RenderChunk(normalId, mouseHitId gl.Int, cam vector.Vector3f, world *matrix.Matrix, wireframe bool, chunkPos vector.Vector3f) {
 	invModel, _ := matrix.InvertMatrix(world)
 	invModel = invModel.Transpose()
-
-	gl.BindVertexArray(chunk.mesh.vertexObject)
 
 	for t := 0; t < 6; t++ {
 		if chunk.mesh.numVertices[t] > 0 {
