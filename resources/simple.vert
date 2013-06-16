@@ -1,6 +1,5 @@
 #version 130
 
-//layout(location = 0) in vec4 vertexPos;
 in vec4 vertexPos;
 
 out vec3 eyeNormal;
