@@ -260,9 +260,6 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 }
 
 func Update(cam *camera.Camera) {
-	// Note: Not optimal
-	setRendererData()
-
 	updateSetupList()
 	updateRebuildList()
 	updateVisibilityList(cam)
@@ -284,20 +281,48 @@ func updateSetupList() {
 	}
 }
 
+type RebuildData struct {
+	vertexBuffers [6][]float32
+	chunk         *Chunk
+}
+
+var rebuildCh = make(chan RebuildData)
+var numRebuilding = 0
+
 func updateRebuildList() {
-	for _, chnk := range rebuildChunks {
-		chnk.IsRebuilding = true
-		chnk.UpdateChunkMesh()
-		chnk.IsRebuilding = false
+	// Note: Not optimal
+	setRendererData()
+
+	select {
+	case rebuildData := <-rebuildCh:
+		rebuildData.chunk.SetChunkMesh(rebuildData.vertexBuffers)
+		rebuildData.chunk.IsRebuilding = false
+		fmt.Printf("rebuilds: %v rebuilt.\n", rebuildData.chunk.position)
+
+		numRebuilding--
+		if numRebuilding <= 0 {
+			numRebuilding = 0
+			fmt.Println("rebuilds: All done")
+		}
+	default:
 	}
 
-	rebuildChunks = map[ChunkCoord]*Chunk{}
+	for index, chnk := range rebuildChunks {
+		// TODO: Performance throttling?
+		if numRebuilding < 2 {
+			numRebuilding++
+			chnk.IsRebuilding = true
+			fmt.Printf("rebuilds: (%d/%d) - Adding %v to rebuild queue.\n", numRebuilding, 2, index)
+			go chnk.CreateVertexData(rebuildCh)
+			delete(rebuildChunks, index)
+		}
+	}
 }
 
 func updateVisibilityList(cam *camera.Camera) {
 	// TODO: Add chunk range limit
 	for t, chnk := range chunkMap {
-		if chnk.IsLoaded && chnk.IsSetup && !chnk.IsRebuilding {
+		if chnk.IsLoaded && chnk.IsSetup {
 			if _, ok := visibleChunks[t]; !ok {
 				fmt.Printf("Added chunk at %v to visible list.\n", t)
 				visibleChunks[t] = chunkMap[t]

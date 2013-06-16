@@ -109,7 +109,7 @@ func createMeshBuffer(faceBuffer *[]float32, size int) gl.Uint {
 	return buffer
 }
 
-func (chunk *Chunk) UpdateChunkMesh() {
+func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 	chunks := GetChunksAroundChunk(chunk.position)
 
 	vertexBuffers := [6][]float32{}
@@ -205,6 +205,14 @@ func (chunk *Chunk) UpdateChunkMesh() {
 		}
 	}
 
+	rebuildData := RebuildData{
+		vertexBuffers: vertexBuffers,
+		chunk:         chunk,
+	}
+	rebuildCh <- rebuildData
+}
+
+func (chunk *Chunk) SetChunkMesh(vertexBuffers [6][]float32) {
 	for t := 0; t < 6; t++ {
 		chunk.mesh.numVertices[t] = gl.Sizei(len(vertexBuffers[t]))
 		if chunk.mesh.numVertices[t] > 0 {
