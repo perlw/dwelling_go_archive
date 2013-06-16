@@ -5,10 +5,10 @@ import (
 	"dwelling/chunkmanager"
 	"dwelling/math/matrix"
 	"dwelling/math/vector"
+	"dwelling/shader"
 	"fmt"
 	gl "github.com/chsc/gogl/gl33"
 	"github.com/jteeuwen/glfw"
-	"io/ioutil"
 	"math"
 	"runtime"
 	"time"
@@ -66,25 +66,11 @@ func main() {
 
 	chunkmanager.Start()
 
-	program := readShaders()
-
-	gl.UseProgram(program)
-
-	pv := gl.GLString("pv")
-	pvId := gl.GetUniformLocation(program, pv)
-	gl.GLStringFree(pv)
-	model := gl.GLString("model")
-	modelId := gl.GetUniformLocation(program, model)
-	gl.GLStringFree(model)
-	normal := gl.GLString("normal")
-	normalId := gl.GetUniformLocation(program, normal)
-	gl.GLStringFree(normal)
-	flatColor := gl.GLString("flatColor")
-	flatColorId := gl.GetUniformLocation(program, flatColor)
-	gl.GLStringFree(flatColor)
-	skipLight := gl.GLString("skipLight")
-	skipLightId := gl.GetUniformLocation(program, skipLight)
-	gl.GLStringFree(skipLight)
+	simpleShader, err := shader.LoadShaderProgram("simple")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	frustumBuffer := camera.CreateFrustumMesh(&cam)
 	gridBuffer := camera.CreateGridMesh()
@@ -120,40 +106,34 @@ func main() {
 		default:
 		}
 
-		glPVMatrix := cam.PVMatrix.ToGL()
-		gl.UseProgram(program)
-		gl.UniformMatrix4fv(pvId, 1, gl.FALSE, &glPVMatrix[0])
+		simpleShader.Use()
+		simpleShader.SetUniformMatrix("pv", cam.PVMatrix)
 
-		chunkmanager.Render(program, &cam)
+		chunkmanager.Render(simpleShader.GetProgramId(), &cam)
 
 		if debugMode {
 			gl.BindVertexArray(debugVao)
 
-			gl.Uniform1i(skipLightId, 1)
+			simpleShader.SetUniformInt("skipLight", 1)
 
 			// Render frustum
-			glNormal := vector.Vector3f{X: 0.0, Y: 1.0, Z: 0.0}.ToGL()
-			gl.Uniform3fv(normalId, 1, &glNormal[0])
-			glFlatColor := vector.Vector3f{X: 0.5, Y: 0.5, Z: 1.0}.ToGL()
-			gl.Uniform3fv(flatColorId, 1, &glFlatColor[0])
+			simpleShader.SetUniformVector3f("normal", vector.Vector3f{X: 0.0, Y: 1.0, Z: 0.0})
+			simpleShader.SetUniformVector3f("flatColor", vector.Vector3f{X: 0.5, Y: 0.5, Z: 1.0})
 
 			modelMatrix := matrix.NewIdentityMatrix()
 			modelMatrix.TranslateVector(cam.FrustumPos)
 			modelMatrix.RotateY(cam.FrustumRot.Y)
 			modelMatrix.RotateX(cam.FrustumRot.X)
-			glModelMatrix := modelMatrix.ToGL()
-			gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
+			simpleShader.SetUniformMatrix("model", modelMatrix)
 			camera.RenderFrustumMesh(&cam, frustumBuffer)
 			// Render frustum
 
 			// Render Mouse ray
-			glFlatColor = vector.Vector3f{X: 1.0, Y: 0.5, Z: 0.5}.ToGL()
-			gl.Uniform3fv(flatColorId, 1, &glFlatColor[0])
+			simpleShader.SetUniformVector3f("flatColor", vector.Vector3f{X: 1.0, Y: 0.5, Z: 0.5})
 
 			mouseBuffer := camera.CreateMouseMesh(&cam)
 			modelMatrix = matrix.NewIdentityMatrix()
-			glModelMatrix = modelMatrix.ToGL()
-			gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
+			simpleShader.SetUniformMatrix("model", modelMatrix)
 			camera.RenderMouseMesh(mouseBuffer)
 			if mouseBuffer > 0 {
 				gl.DeleteBuffers(1, &mouseBuffer)
@@ -161,16 +141,14 @@ func main() {
 			// Render Mouse ray
 
 			// Render Grid
-			glFlatColor = vector.Vector3f{X: 0.0, Y: 0.0, Z: 0.0}.ToGL()
-			gl.Uniform3fv(flatColorId, 1, &glFlatColor[0])
+			simpleShader.SetUniformVector3f("flatColor", vector.Vector3f{X: 0.0, Y: 0.0, Z: 0.0})
 
 			modelMatrix = matrix.NewIdentityMatrix()
-			glModelMatrix = modelMatrix.ToGL()
-			gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
+			simpleShader.SetUniformMatrix("model", modelMatrix)
 			camera.RenderGridMesh(gridBuffer)
 			// Render Mouse ray
 
-			gl.Uniform1i(skipLightId, 0)
+			simpleShader.SetUniformInt("skipLight", 0)
 		}
 
 		if err := gl.GetError(); err != 0 {
@@ -313,65 +291,4 @@ func logicLoop(camCh chan<- bool, debugCh chan<- bool, logicCh chan<- bool, exit
 			logicCh <- true
 		}
 	}
-}
-
-func readShaders() gl.Uint {
-	// Vertex shader
-	vertexFile, err := ioutil.ReadFile("simple.vert")
-	if err != nil {
-		return 0
-	}
-	vertexSource := gl.GLString(string(vertexFile))
-	defer gl.GLStringFree(vertexSource)
-
-	vertexObj := gl.CreateShader(gl.VERTEX_SHADER)
-	gl.ShaderSource(vertexObj, 1, &vertexSource, nil)
-	gl.CompileShader(vertexObj)
-	defer gl.DeleteShader(vertexObj)
-	fmt.Println("vertex")
-	printShaderLog(vertexObj)
-
-	// Fragment shader
-	fragmentFile, err := ioutil.ReadFile("simple.frag")
-	if err != nil {
-		return 0
-	}
-	fragmentSource := gl.GLString(string(fragmentFile))
-	defer gl.GLStringFree(fragmentSource)
-
-	fragmentObj := gl.CreateShader(gl.FRAGMENT_SHADER)
-	gl.ShaderSource(fragmentObj, 1, &fragmentSource, nil)
-	gl.CompileShader(fragmentObj)
-	defer gl.DeleteShader(fragmentObj)
-	fmt.Println("fragment")
-	printShaderLog(fragmentObj)
-
-	// Program
-	program := gl.CreateProgram()
-	gl.AttachShader(program, vertexObj)
-	gl.AttachShader(program, fragmentObj)
-
-	gl.LinkProgram(program)
-
-	printProgramLog(program)
-
-	return program
-}
-
-func printShaderLog(shader gl.Uint) {
-	var length gl.Int
-	gl.GetShaderiv(shader, gl.INFO_LOG_LENGTH, &length)
-	glString := gl.GLStringAlloc(gl.Sizei(length))
-	defer gl.GLStringFree(glString)
-	gl.GetShaderInfoLog(shader, gl.Sizei(length), nil, glString)
-	fmt.Println("shader log: ", gl.GoString(glString))
-}
-
-func printProgramLog(program gl.Uint) {
-	var length gl.Int
-	gl.GetProgramiv(program, gl.INFO_LOG_LENGTH, &length)
-	glString := gl.GLStringAlloc(gl.Sizei(length))
-	defer gl.GLStringFree(glString)
-	gl.GetProgramInfoLog(program, gl.Sizei(length), nil, glString)
-	fmt.Println("program log: ", gl.GoString(glString))
 }
