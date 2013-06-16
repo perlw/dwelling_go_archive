@@ -3,8 +3,6 @@ package main
 import (
 	"dwelling/camera"
 	"dwelling/chunkmanager"
-	"dwelling/math/matrix"
-	"dwelling/math/vector"
 	"dwelling/shader"
 	"fmt"
 	gl "github.com/chsc/gogl/gl33"
@@ -14,7 +12,7 @@ import (
 	"time"
 )
 
-var cam = camera.Camera{Pos: vector.Vector3f{X: -48.0, Y: 32.0, Z: -48.0}, Rot: vector.Vector3f{X: 0.0, Y: 135, Z: 0.0}}
+var cam = camera.Camera{}
 
 func main() {
 	runtime.LockOSThread()
@@ -51,18 +49,10 @@ func main() {
 	gl.DepthFunc(gl.LEQUAL)
 	gl.Viewport(0, 0, 640, 480)
 
-	cam.ProjectionMatrix = matrix.NewPerspectiveMatrix(53.13, 640.0/480.0, 1.0, 1000.0)
-	cam.FrustumPos = cam.Pos
-	cam.FrustumRot = cam.Rot
-	cam.CullPos = cam.Pos
-	cam.UpdateViewMatrix()
-	cam.UpdatePVMatrix()
-	cam.UpdateFrustum()
-
-	var debugVao gl.Uint
-	gl.GenVertexArrays(1, &debugVao)
-	gl.BindVertexArray(debugVao)
-	gl.EnableVertexAttribArray(0)
+	if err := cam.Init(); err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	chunkmanager.Start()
 
@@ -71,9 +61,6 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-
-	frustumBuffer := camera.CreateFrustumMesh(&cam)
-	gridBuffer := camera.CreateGridMesh()
 
 	camCh := make(chan bool)
 	debugCh := make(chan bool)
@@ -108,47 +95,10 @@ func main() {
 
 		simpleShader.Use()
 		simpleShader.SetUniformMatrix("pv", cam.PVMatrix)
-
 		chunkmanager.Render(simpleShader.GetProgramId(), &cam)
 
 		if debugMode {
-			gl.BindVertexArray(debugVao)
-
-			simpleShader.SetUniformInt("skipLight", 1)
-
-			// Render frustum
-			simpleShader.SetUniformVector3f("normal", vector.Vector3f{X: 0.0, Y: 1.0, Z: 0.0})
-			simpleShader.SetUniformVector3f("flatColor", vector.Vector3f{X: 0.5, Y: 0.5, Z: 1.0})
-
-			modelMatrix := matrix.NewIdentityMatrix()
-			modelMatrix.TranslateVector(cam.FrustumPos)
-			modelMatrix.RotateY(cam.FrustumRot.Y)
-			modelMatrix.RotateX(cam.FrustumRot.X)
-			simpleShader.SetUniformMatrix("model", modelMatrix)
-			camera.RenderFrustumMesh(&cam, frustumBuffer)
-			// Render frustum
-
-			// Render Mouse ray
-			simpleShader.SetUniformVector3f("flatColor", vector.Vector3f{X: 1.0, Y: 0.5, Z: 0.5})
-
-			mouseBuffer := camera.CreateMouseMesh(&cam)
-			modelMatrix = matrix.NewIdentityMatrix()
-			simpleShader.SetUniformMatrix("model", modelMatrix)
-			camera.RenderMouseMesh(mouseBuffer)
-			if mouseBuffer > 0 {
-				gl.DeleteBuffers(1, &mouseBuffer)
-			}
-			// Render Mouse ray
-
-			// Render Grid
-			simpleShader.SetUniformVector3f("flatColor", vector.Vector3f{X: 0.0, Y: 0.0, Z: 0.0})
-
-			modelMatrix = matrix.NewIdentityMatrix()
-			simpleShader.SetUniformMatrix("model", modelMatrix)
-			camera.RenderGridMesh(gridBuffer)
-			// Render Mouse ray
-
-			simpleShader.SetUniformInt("skipLight", 0)
+			cam.RenderDebugMeshes()
 		}
 
 		if err := gl.GetError(); err != 0 {

@@ -186,8 +186,8 @@ func (program *ShaderProgram) getUniformLocation(location string) (gl.Int, error
 	locId := gl.GetUniformLocation(program.programId, glLocString)
 	gl.GLStringFree(glLocString)
 
-	if locId == 0 {
-		return 0, errors.New("shader: Could not find location of \"" + location + "\" in \"" + program.name + "\"")
+	if locId < 0 {
+		return -1, errors.New("shader: Could not find location of \"" + location + "\" in \"" + program.name + "\"")
 	}
 
 	program.uniformIds[location] = locId

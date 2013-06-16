@@ -17,10 +17,30 @@ type Camera struct {
 	PVMatrix         *matrix.Matrix
 
 	Planes [6]Plane
+
+	debugData DebugData
 }
 
 type Plane struct {
 	A, B, C, D float64
+}
+
+func (cam *Camera) Init() error {
+	cam.Pos = vector.Vector3f{X: -48.0, Y: 32.0, Z: -48.0}
+	cam.Rot = vector.Vector3f{X: 0.0, Y: 135, Z: 0.0}
+	cam.ProjectionMatrix = matrix.NewPerspectiveMatrix(53.13, 640.0/480.0, 1.0, 1000.0)
+	cam.FrustumPos = cam.Pos
+	cam.FrustumRot = cam.Rot
+	cam.CullPos = cam.Pos
+	cam.UpdateViewMatrix()
+	cam.UpdatePVMatrix()
+	cam.UpdateFrustum()
+
+	if err := cam.setUpDebugRenderer(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (cam *Camera) UpdateViewMatrix() {

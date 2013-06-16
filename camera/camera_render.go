@@ -1,12 +1,71 @@
 package camera
 
 import (
+	"dwelling/math/matrix"
+	"dwelling/math/vector"
+	"dwelling/shader"
 	gl "github.com/chsc/gogl/gl33"
 	"unsafe"
 )
 
-func CreateFrustumMesh(cam *Camera) gl.Uint {
-	var buffer gl.Uint
+type DebugData struct {
+	// Debug
+	debugVao           gl.Uint
+	debugShader        *shader.ShaderProgram
+	debugFrustumBuffer gl.Uint
+	debugGridBuffer    gl.Uint
+	debugMouseBuffer   gl.Uint
+}
+
+func (cam *Camera) setUpDebugRenderer() error {
+	var err error
+	cam.debugData.debugShader, err = shader.LoadShaderProgram("debug")
+	if err != nil {
+		return err
+	}
+
+	gl.GenVertexArrays(1, &cam.debugData.debugVao)
+	gl.BindVertexArray(cam.debugData.debugVao)
+	gl.EnableVertexAttribArray(0)
+
+	cam.createFrustumMesh()
+	cam.createGridMesh()
+
+	return nil
+}
+
+func (cam *Camera) RenderDebugMeshes() {
+	gl.BindVertexArray(cam.debugData.debugVao)
+	cam.debugData.debugShader.Use()
+	cam.debugData.debugShader.SetUniformMatrix("pv", cam.PVMatrix)
+
+	// Render frustum
+	cam.debugData.debugShader.SetUniformVector3f("flatColor", vector.Vector3f{X: 0.5, Y: 0.5, Z: 1.0})
+	modelMatrix := matrix.NewIdentityMatrix()
+	modelMatrix.TranslateVector(cam.FrustumPos)
+	modelMatrix.RotateY(cam.FrustumRot.Y)
+	modelMatrix.RotateX(cam.FrustumRot.X)
+	cam.debugData.debugShader.SetUniformMatrix("model", modelMatrix)
+	cam.renderFrustumMesh()
+	// Render frustum
+
+	// Render Mouse ray
+	cam.debugData.debugShader.SetUniformVector3f("flatColor", vector.Vector3f{X: 1.0, Y: 0.5, Z: 0.5})
+	cam.createMouseMesh()
+	modelMatrix = matrix.NewIdentityMatrix()
+	cam.debugData.debugShader.SetUniformMatrix("model", modelMatrix)
+	cam.renderMouseMesh()
+	// Render Mouse ray
+
+	// Render Grid
+	cam.debugData.debugShader.SetUniformVector3f("flatColor", vector.Vector3f{X: 0.0, Y: 0.0, Z: 0.0})
+	modelMatrix = matrix.NewIdentityMatrix()
+	cam.debugData.debugShader.SetUniformMatrix("model", modelMatrix)
+	cam.renderGridMesh()
+	// Render Mouse ray
+}
+
+func (cam *Camera) createFrustumMesh() {
 	sizeFloat := int(unsafe.Sizeof([1]float32{}))
 
 	proj := cam.ProjectionMatrix.Values
@@ -59,26 +118,23 @@ func CreateFrustumMesh(cam *Camera) gl.Uint {
 		nRight, nBottom, float32(-near),
 	}
 
-	gl.GenBuffers(1, &buffer)
-	gl.BindBuffer(gl.ARRAY_BUFFER, buffer)
+	gl.GenBuffers(1, &cam.debugData.debugFrustumBuffer)
+	gl.BindBuffer(gl.ARRAY_BUFFER, cam.debugData.debugFrustumBuffer)
 	gl.BufferData(gl.ARRAY_BUFFER, gl.Sizeiptr(sizeFloat*len(vertices)), gl.Pointer(&vertices[0]), gl.STATIC_DRAW)
 
-	gl.BindBuffer(gl.ARRAY_BUFFER, buffer)
+	gl.BindBuffer(gl.ARRAY_BUFFER, cam.debugData.debugFrustumBuffer)
 	gl.EnableVertexAttribArray(0)
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
 	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
-
-	return buffer
 }
 
-func RenderFrustumMesh(cam *Camera, meshBuffer gl.Uint) {
-	gl.BindBuffer(gl.ARRAY_BUFFER, meshBuffer)
+func (cam *Camera) renderFrustumMesh() {
+	gl.BindBuffer(gl.ARRAY_BUFFER, cam.debugData.debugFrustumBuffer)
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
 	gl.DrawArrays(gl.LINES, 0, 24)
 }
 
-func CreateMouseMesh(cam *Camera) gl.Uint {
-	var buffer gl.Uint
+func (cam *Camera) createMouseMesh() {
 	sizeFloat := int(unsafe.Sizeof([1]float32{}))
 
 	startPos := cam.MousePos
@@ -88,26 +144,26 @@ func CreateMouseMesh(cam *Camera) gl.Uint {
 		float32(endPos.X), float32(endPos.Y), float32(endPos.Z),
 	}
 
-	gl.GenBuffers(1, &buffer)
-	gl.BindBuffer(gl.ARRAY_BUFFER, buffer)
+	if cam.debugData.debugMouseBuffer == 0 {
+		gl.GenBuffers(1, &cam.debugData.debugMouseBuffer)
+
+	}
+	gl.BindBuffer(gl.ARRAY_BUFFER, cam.debugData.debugMouseBuffer)
 	gl.BufferData(gl.ARRAY_BUFFER, gl.Sizeiptr(sizeFloat*len(vertices)), gl.Pointer(&vertices[0]), gl.STATIC_DRAW)
 
-	gl.BindBuffer(gl.ARRAY_BUFFER, buffer)
+	gl.BindBuffer(gl.ARRAY_BUFFER, cam.debugData.debugMouseBuffer)
 	gl.EnableVertexAttribArray(0)
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
 	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
-
-	return buffer
 }
 
-func RenderMouseMesh(meshBuffer gl.Uint) {
-	gl.BindBuffer(gl.ARRAY_BUFFER, meshBuffer)
+func (cam *Camera) renderMouseMesh() {
+	gl.BindBuffer(gl.ARRAY_BUFFER, cam.debugData.debugMouseBuffer)
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
 	gl.DrawArrays(gl.LINES, 0, 2)
 }
 
-func CreateGridMesh() gl.Uint {
-	var buffer gl.Uint
+func (cam *Camera) createGridMesh() {
 	sizeFloat := int(unsafe.Sizeof([1]float32{}))
 
 	var vertices []float32
@@ -138,20 +194,18 @@ func CreateGridMesh() gl.Uint {
 		vertices = append(vertices, 0.0, i, g)
 	}
 
-	gl.GenBuffers(1, &buffer)
-	gl.BindBuffer(gl.ARRAY_BUFFER, buffer)
+	gl.GenBuffers(1, &cam.debugData.debugGridBuffer)
+	gl.BindBuffer(gl.ARRAY_BUFFER, cam.debugData.debugGridBuffer)
 	gl.BufferData(gl.ARRAY_BUFFER, gl.Sizeiptr(sizeFloat*len(vertices)), gl.Pointer(&vertices[0]), gl.STATIC_DRAW)
 
-	gl.BindBuffer(gl.ARRAY_BUFFER, buffer)
+	gl.BindBuffer(gl.ARRAY_BUFFER, cam.debugData.debugGridBuffer)
 	gl.EnableVertexAttribArray(0)
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
 	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
-
-	return buffer
 }
 
-func RenderGridMesh(meshBuffer gl.Uint) {
-	gl.BindBuffer(gl.ARRAY_BUFFER, meshBuffer)
+func (cam *Camera) renderGridMesh() {
+	gl.BindBuffer(gl.ARRAY_BUFFER, cam.debugData.debugGridBuffer)
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
 	gl.DrawArrays(gl.LINES, 0, 3072)
 }
