@@ -243,6 +243,7 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 								if !chnk.IsRebuilding {
 									delete(chnk.data, blkPos)
 									rebuildChunks[pos] = chnk
+									rebuildNeighborsCheck(chnk.position, blkPos)
 								}
 
 								return
@@ -254,6 +255,54 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 				}
 			} else {
 				fmt.Println("nope...\n")
+			}
+		}
+	}
+}
+
+func rebuildNeighborsCheck(chnkPos ChunkCoord, blkPos BlockCoord) {
+	if blkPos.X == 0 {
+		neighborPos := ChunkCoord{chnkPos.X - 1, chnkPos.Y, chnkPos.Z}
+		if chnk, ok := chunkMap[neighborPos]; ok {
+			if _, ok := chnk.data[BlockCoord{ChunkBase - 1, blkPos.Y, blkPos.Z}]; ok {
+				rebuildChunks[neighborPos] = chnk
+			}
+		}
+	} else if blkPos.X == ChunkBase-1 {
+		neighborPos := ChunkCoord{chnkPos.X + 1, chnkPos.Y, chnkPos.Z}
+		if chnk, ok := chunkMap[neighborPos]; ok {
+			if _, ok := chnk.data[BlockCoord{0, blkPos.Y, blkPos.Z}]; ok {
+				rebuildChunks[neighborPos] = chnk
+			}
+		}
+	}
+	if blkPos.Y == 0 {
+		neighborPos := ChunkCoord{chnkPos.X, chnkPos.Y - 1, chnkPos.Z}
+		if chnk, ok := chunkMap[neighborPos]; ok {
+			if _, ok := chnk.data[BlockCoord{blkPos.X, ChunkBase - 1, blkPos.Z}]; ok {
+				rebuildChunks[neighborPos] = chnk
+			}
+		}
+	} else if blkPos.Y == ChunkBase-1 {
+		neighborPos := ChunkCoord{chnkPos.X, chnkPos.Y + 1, chnkPos.Z}
+		if chnk, ok := chunkMap[neighborPos]; ok {
+			if _, ok := chnk.data[BlockCoord{blkPos.X, 0, blkPos.Z}]; ok {
+				rebuildChunks[neighborPos] = chnk
+			}
+		}
+	}
+	if blkPos.Z == 0 {
+		neighborPos := ChunkCoord{chnkPos.X, chnkPos.Y, chnkPos.Z - 1}
+		if chnk, ok := chunkMap[neighborPos]; ok {
+			if _, ok := chnk.data[BlockCoord{blkPos.X, blkPos.Y, ChunkBase - 1}]; ok {
+				rebuildChunks[neighborPos] = chnk
+			}
+		}
+	} else if blkPos.Z == ChunkBase-1 {
+		neighborPos := ChunkCoord{chnkPos.X, chnkPos.Y, chnkPos.Z + 1}
+		if chnk, ok := chunkMap[neighborPos]; ok {
+			if _, ok := chnk.data[BlockCoord{blkPos.X, blkPos.Y, 0}]; ok {
+				rebuildChunks[neighborPos] = chnk
 			}
 		}
 	}
