@@ -1,6 +1,9 @@
 package chunkmanager
 
-import "math"
+import (
+	"math"
+	"math/rand"
+)
 
 func newPyramidChunk(invert bool) *Chunk {
 	chunk := &Chunk{}
@@ -27,17 +30,24 @@ func newPyramidChunk(invert bool) *Chunk {
 	return chunk
 }
 
-func newCubeChunk() *Chunk {
+func newCubeChunk(random bool) *Chunk {
 	chunk := &Chunk{}
 
 	chunk.data = map[BlockCoord]*Block{}
 	for y := 0; y < ChunkBase; y++ {
 		for x := 0; x < ChunkBase; x++ {
 			for z := 0; z < ChunkBase; z++ {
-				index := BlockCoord{x, y, z}
-				chunk.data[index] = &Block{
-					visible:  false,
-					position: index,
+				val := 1
+				if random == false {
+					val = rand.Intn(2)
+				}
+
+				if val == 1 {
+					index := BlockCoord{x, y, z}
+					chunk.data[index] = &Block{
+						visible:  false,
+						position: index,
+					}
 				}
 			}
 		}

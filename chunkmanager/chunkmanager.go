@@ -52,22 +52,24 @@ func Start() error {
 	for x := 0; x < cubed; x++ {
 		for z := 0; z < cubed; z++ {
 			for y := 0; y < cubed; y++ {
-				val := rand.Intn(5)
+				val := rand.Intn(6)
 
 				var chunk *Chunk
 				switch val {
 				case 0:
-					chunk = newCubeChunk()
+					chunk = newCubeChunk(false)
 				case 1:
-					chunk = newPyramidChunk(false)
+					chunk = newCubeChunk(true)
 				case 2:
-					chunk = newPyramidChunk(true)
+					chunk = newPyramidChunk(false)
 				case 3:
-					chunk = newSphereChunk()
+					chunk = newPyramidChunk(true)
 				case 4:
+					chunk = newSphereChunk()
+				case 5:
 					chunk = newWireCubeChunk()
 				default:
-					chunk = newCubeChunk()
+					chunk = newCubeChunk(false)
 				}
 				chunk.position = ChunkCoord{x, y, z}
 				chunkMap[chunk.position] = chunk
