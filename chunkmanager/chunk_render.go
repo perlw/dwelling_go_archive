@@ -3,6 +3,7 @@ package chunkmanager
 import (
 	"dwelling/math/matrix"
 	"dwelling/math/vector"
+	"dwelling/shader"
 	"fmt"
 	gl "github.com/chsc/gogl/gl33"
 	"unsafe"
@@ -246,7 +247,7 @@ var facePos = [6]vector.Vector3f{
 	{0.0, 0.0 + float64(ChunkBase), 0.0},
 }
 
-func (chunk *Chunk) RenderChunk(normalId, mouseHitId gl.Int, cam vector.Vector3f, world *matrix.Matrix, wireframe bool, chunkPos vector.Vector3f) {
+func (chunk *Chunk) RenderChunk(chunkShader *shader.ShaderProgram, cam vector.Vector3f, world *matrix.Matrix, wireframe bool) {
 	invModel, _ := matrix.InvertMatrix(world)
 	invModel = invModel.Transpose()
 
@@ -259,13 +260,12 @@ func (chunk *Chunk) RenderChunk(normalId, mouseHitId gl.Int, cam vector.Vector3f
 			dot := vector.DotProduct(camDir, normal)
 
 			if dot > 0.0 {
-				var mouseHitGL gl.Int = 0
+				mouseHit := 0
 				if chunk.MouseHit {
-					mouseHitGL = 1
+					mouseHit = 1
 				}
-				normal := chunkNormals[t].ToGL()
-				gl.Uniform3fv(normalId, 1, &normal[0])
-				gl.Uniform1i(mouseHitId, mouseHitGL)
+				chunkShader.SetUniformVector3f("normal", normal)
+				chunkShader.SetUniformInt("mouseHit", mouseHit)
 				chunk.renderMeshBuffer(t, wireframe)
 			}
 		}

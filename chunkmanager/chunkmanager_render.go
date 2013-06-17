@@ -3,34 +3,35 @@ package chunkmanager
 import (
 	"dwelling/camera"
 	"dwelling/math/matrix"
-	"dwelling/math/vector"
+	"dwelling/shader"
 	gl "github.com/chsc/gogl/gl33"
 )
 
 var worldVAO gl.Uint = 0
+var chunkShader *shader.ShaderProgram
 
-func setRendererData() {
-	if worldVAO == 0 {
-		gl.GenVertexArrays(1, &worldVAO)
-		gl.BindVertexArray(worldVAO)
-		gl.EnableVertexAttribArray(0)
-	} else {
-		gl.BindVertexArray(worldVAO)
+func setUpRenderer() error {
+	var err error
+	chunkShader, err = shader.LoadShaderProgram("chunk")
+	if err != nil {
+		return err
 	}
+
+	gl.GenVertexArrays(1, &worldVAO)
+	gl.BindVertexArray(worldVAO)
+	gl.EnableVertexAttribArray(0)
+
+	return nil
 }
 
-func Render(program gl.Uint, cam *camera.Camera) {
-	setRendererData()
+func setRendererData() {
+	gl.BindVertexArray(worldVAO)
+}
 
-	model := gl.GLString("model")
-	modelId := gl.GetUniformLocation(program, model)
-	gl.GLStringFree(model)
-	normal := gl.GLString("normal")
-	normalId := gl.GetUniformLocation(program, normal)
-	gl.GLStringFree(normal)
-	mouseHit := gl.GLString("mouseHit")
-	mouseHitId := gl.GetUniformLocation(program, mouseHit)
-	gl.GLStringFree(mouseHit)
+func Render(cam *camera.Camera) {
+	setRendererData()
+	chunkShader.Use()
+	chunkShader.SetUniformMatrix("pv", cam.PVMatrix)
 
 	for pos, chnk := range renderChunks {
 		posx := float64(pos.X * ChunkBase)
@@ -39,10 +40,9 @@ func Render(program gl.Uint, cam *camera.Camera) {
 
 		modelMatrix := matrix.NewIdentityMatrix()
 		modelMatrix.Translate(posx, posy, posz)
-		glModelMatrix := modelMatrix.ToGL()
-		gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
+		chunkShader.SetUniformMatrix("model", modelMatrix)
 
-		chnk.RenderChunk(normalId, mouseHitId, cam.CullPos, modelMatrix, false, vector.Vector3f{posx, posy, posz})
+		chnk.RenderChunk(chunkShader, cam.CullPos, modelMatrix, false)
 	}
 
 	if debugMode {
@@ -53,10 +53,9 @@ func Render(program gl.Uint, cam *camera.Camera) {
 
 			modelMatrix := matrix.NewIdentityMatrix()
 			modelMatrix.Translate(posx, posy, posz)
-			glModelMatrix := modelMatrix.ToGL()
-			gl.UniformMatrix4fv(modelId, 1, gl.FALSE, &glModelMatrix[0])
+			chunkShader.SetUniformMatrix("model", modelMatrix)
 
-			chnk.RenderChunk(normalId, mouseHitId, cam.CullPos, modelMatrix, true, vector.Vector3f{posx, posy, posz})
+			chnk.RenderChunk(chunkShader, cam.CullPos, modelMatrix, true)
 		}
 	}
 }

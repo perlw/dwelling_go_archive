@@ -45,7 +45,7 @@ var camView = vector.Vector3f{0.0, 0.0, -1.0}
 
 var debugMode = false
 
-func Start() {
+func Start() error {
 	rand.Seed(time.Now().Unix())
 
 	cubed := 4
@@ -74,6 +74,12 @@ func Start() {
 			}
 		}
 	}
+
+	if err := setUpRenderer(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func SetDebug(mode bool) {
@@ -216,7 +222,9 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 			boxSize := chunkBase
 			if PointInBox(rayStep, boxPos, boxSize) {
 				fmt.Printf("hit!\n")
-				chnk.MouseHit = true
+				if debugMode {
+					chnk.MouseHit = true
+				}
 
 				startDist := dist - 8.0
 				for dist := startDist; dist < startDist+24.0; dist += 0.5 {

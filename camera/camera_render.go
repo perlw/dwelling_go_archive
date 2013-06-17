@@ -9,7 +9,6 @@ import (
 )
 
 type DebugData struct {
-	// Debug
 	debugVao           gl.Uint
 	debugShader        *shader.ShaderProgram
 	debugFrustumBuffer gl.Uint

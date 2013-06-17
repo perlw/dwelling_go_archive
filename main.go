@@ -3,7 +3,6 @@ package main
 import (
 	"dwelling/camera"
 	"dwelling/chunkmanager"
-	"dwelling/shader"
 	"fmt"
 	gl "github.com/chsc/gogl/gl33"
 	"github.com/jteeuwen/glfw"
@@ -54,10 +53,7 @@ func main() {
 		return
 	}
 
-	chunkmanager.Start()
-
-	simpleShader, err := shader.LoadShaderProgram("simple")
-	if err != nil {
+	if err := chunkmanager.Start(); err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -93,9 +89,7 @@ func main() {
 		default:
 		}
 
-		simpleShader.Use()
-		simpleShader.SetUniformMatrix("pv", cam.PVMatrix)
-		chunkmanager.Render(simpleShader.GetProgramId(), &cam)
+		chunkmanager.Render(&cam)
 
 		if debugMode {
 			cam.RenderDebugMeshes()
