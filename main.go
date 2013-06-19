@@ -28,7 +28,7 @@ func main() {
 	glfw.OpenWindowHint(glfw.OpenGLVersionMinor, 0)
 	glfw.OpenWindowHint(glfw.WindowNoResize, 1)
 
-	if err := glfw.OpenWindow(640, 480, 0, 0, 0, 0, 16, 0, glfw.Windowed); err != nil {
+	if err := glfw.OpenWindow(640, 480, 8, 8, 8, 8, 16, 0, glfw.Windowed); err != nil {
 		fmt.Printf("glfw: %s\n", err)
 		return
 	}
