@@ -29,7 +29,6 @@ var chunkNormals = [6]vector.Vector3f{
 
 type ChunkMesh struct {
 	vertexBufferIds    [6]gl.Uint
-	newVertexBufferIds [6]gl.Uint
 	numVertices        [6]gl.Sizei
 }
 
@@ -222,14 +221,11 @@ func (chunk *Chunk) SetChunkMesh(vertexBuffers [6][]float32) {
 				// Refactor
 				sizeFloat := int(unsafe.Sizeof([1]float32{}))
 				size := gl.Sizeiptr(sizeFloat * len(vertexBuffers[t]))
-				gl.BindBuffer(gl.ARRAY_BUFFER, chunk.mesh.newVertexBufferIds[t])
+				gl.BindBuffer(gl.ARRAY_BUFFER, chunk.mesh.vertexBufferIds[t])
 				gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
 				gl.BufferData(gl.ARRAY_BUFFER, size, gl.Pointer(&vertexBuffers[t][0]), gl.STATIC_DRAW)
-
-				chunk.mesh.vertexBufferIds[t], chunk.mesh.newVertexBufferIds[t] = chunk.mesh.newVertexBufferIds[t], chunk.mesh.vertexBufferIds[t]
 			} else {
 				chunk.mesh.vertexBufferIds[t] = createMeshBuffer(&vertexBuffers[t], len(vertexBuffers[t]))
-				chunk.mesh.newVertexBufferIds[t] = createMeshBuffer(&vertexBuffers[t], len(vertexBuffers[t]))
 			}
 		}
 	}
