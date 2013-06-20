@@ -66,6 +66,10 @@ vec3 sh_light(vec3 normal, SHC l){
     );
 }
 
+vec3 gamma(vec3 color) {
+    return pow(color, vec3(1.0/2.0));
+}
+
 in vec3 eyeNormal;
 out vec4 fragment;
 
@@ -75,7 +79,7 @@ vec4 lightColor = vec4(1.0, 1.0, 1.0, 1.0);
 uniform int mouseHit;
 
 void main() {
-	fragment = vec4(sh_light(eyeNormal, beach) * 0.5, 1.0);
+	fragment = vec4(gamma(sh_light(eyeNormal, beach) * 0.5), 1.0);
 	/*float NdotL = max(dot(eyeNormal, lightDir), 0.0);
 
 	vec4 color = (lightColor + vec4(eyeNormal, 1.0)) / 4;
