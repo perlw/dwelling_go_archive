@@ -64,7 +64,7 @@ func main() {
 	exitCh := make(chan bool)
 	go logicLoop(camCh, debugCh, logicCh, exitCh, &cam)
 
-	gl.ClearColor(0.25, 0.25, 0.25, 1.0)
+	gl.ClearColor(0.8, 0.8, 0.8, 1.0)
 	currentTick := time.Now().UnixNano() / 1000000.0
 	frameCount := 0
 	debugMode := false
