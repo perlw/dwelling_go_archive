@@ -28,8 +28,9 @@ var chunkNormals = [6]vector.Vector3f{
 }
 
 type ChunkMesh struct {
-	vertexBufferIds    [6]gl.Uint
-	numVertices        [6]gl.Sizei
+	vertexBufferIds [6]gl.Uint
+	occBufferIds    [6]gl.Uint
+	numVertices     [6]gl.Sizei
 }
 
 func appendChunkFace(faceBuffer *[]float32, x, y, z float32, face int) {
@@ -114,6 +115,7 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 	chunks := GetChunksAroundChunk(chunk.position)
 
 	vertexBuffers := [6][]float32{}
+	occBuffers := [6][]float32{}
 	for pos := range chunk.data {
 		x := float32(pos.X)
 		y := float32(pos.Y)
@@ -131,6 +133,16 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 			if !skip {
 				sides++
 				appendChunkFace(&vertexBuffers[FRONT], x, y, z, FRONT)
+
+				occFactor := float32(chunk.data[pos].occlusion)
+				occBuffers[FRONT] = append(occBuffers[FRONT],
+					occFactor,
+					occFactor,
+					occFactor,
+					occFactor,
+					occFactor,
+					occFactor,
+				)
 			}
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y, pos.Z - 1}]; !ok {
@@ -144,6 +156,16 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 			if !skip {
 				sides++
 				appendChunkFace(&vertexBuffers[BACK], x, y, z, BACK)
+
+				occFactor := float32(chunk.data[pos].occlusion)
+				occBuffers[BACK] = append(occBuffers[BACK],
+					occFactor,
+					occFactor,
+					occFactor,
+					occFactor,
+					occFactor,
+					occFactor,
+				)
 			}
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X - 1, pos.Y, pos.Z}]; !ok {
@@ -157,6 +179,16 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 			if !skip {
 				sides++
 				appendChunkFace(&vertexBuffers[LEFT], x, y, z, LEFT)
+
+				occFactor := float32(chunk.data[pos].occlusion)
+				occBuffers[LEFT] = append(occBuffers[LEFT],
+					occFactor,
+					occFactor,
+					occFactor,
+					occFactor,
+					occFactor,
+					occFactor,
+				)
 			}
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X + 1, pos.Y, pos.Z}]; !ok {
@@ -170,6 +202,16 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 			if !skip {
 				sides++
 				appendChunkFace(&vertexBuffers[RIGHT], x, y, z, RIGHT)
+
+				occFactor := float32(chunk.data[pos].occlusion)
+				occBuffers[RIGHT] = append(occBuffers[RIGHT],
+					occFactor,
+					occFactor,
+					occFactor,
+					occFactor,
+					occFactor,
+					occFactor,
+				)
 			}
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y + 1, pos.Z}]; !ok {
@@ -183,6 +225,16 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 			if !skip {
 				sides++
 				appendChunkFace(&vertexBuffers[TOP], x, y, z, TOP)
+
+				occFactor := float32(chunk.data[pos].occlusion)
+				occBuffers[TOP] = append(occBuffers[TOP],
+					occFactor,
+					occFactor,
+					occFactor,
+					occFactor,
+					occFactor,
+					occFactor,
+				)
 			}
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y - 1, pos.Z}]; !ok {
@@ -196,6 +248,16 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 			if !skip {
 				sides++
 				appendChunkFace(&vertexBuffers[BOTTOM], x, y, z, BOTTOM)
+
+				occFactor := float32(chunk.data[pos].occlusion)
+				occBuffers[BOTTOM] = append(occBuffers[BOTTOM],
+					occFactor,
+					occFactor,
+					occFactor,
+					occFactor,
+					occFactor,
+					occFactor,
+				)
 			}
 		}
 
@@ -208,12 +270,16 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 
 	rebuildData := RebuildData{
 		vertexBuffers: vertexBuffers,
+		occBuffers:    occBuffers,
 		chunk:         chunk,
 	}
 	rebuildCh <- rebuildData
 }
 
-func (chunk *Chunk) SetChunkMesh(vertexBuffers [6][]float32) {
+func (chunk *Chunk) SetChunkMesh(rebuildData RebuildData) {
+	vertexBuffers := rebuildData.vertexBuffers
+	occBuffers := rebuildData.occBuffers
+
 	for t := 0; t < 6; t++ {
 		chunk.mesh.numVertices[t] = gl.Sizei(len(vertexBuffers[t]))
 		if chunk.mesh.numVertices[t] > 0 {
@@ -226,6 +292,7 @@ func (chunk *Chunk) SetChunkMesh(vertexBuffers [6][]float32) {
 				gl.BufferData(gl.ARRAY_BUFFER, size, gl.Pointer(&vertexBuffers[t][0]), gl.STATIC_DRAW)
 			} else {
 				chunk.mesh.vertexBufferIds[t] = createMeshBuffer(&vertexBuffers[t], len(vertexBuffers[t]))
+				chunk.mesh.occBufferIds[t] = createMeshBuffer(&occBuffers[t], len(occBuffers[t]))
 			}
 		}
 	}
@@ -275,6 +342,8 @@ func (chunk *Chunk) RenderChunk(chunkShader *shader.ShaderProgram, cam vector.Ve
 func (chunk *Chunk) renderMeshBuffer(side int, wireframe bool) {
 	gl.BindBuffer(gl.ARRAY_BUFFER, chunk.mesh.vertexBufferIds[side])
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
+	gl.BindBuffer(gl.ARRAY_BUFFER, chunk.mesh.occBufferIds[side])
+	gl.VertexAttribPointer(1, 1, gl.FLOAT, gl.FALSE, 0, nil)
 	if wireframe {
 		gl.DrawArrays(gl.LINES, 0, chunk.mesh.numVertices[side])
 	} else {

@@ -20,6 +20,7 @@ func setUpRenderer() error {
 	gl.GenVertexArrays(1, &worldVAO)
 	gl.BindVertexArray(worldVAO)
 	gl.EnableVertexAttribArray(0)
+	gl.EnableVertexAttribArray(1)
 
 	return nil
 }

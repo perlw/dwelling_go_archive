@@ -31,8 +31,9 @@ type Chunk struct {
 }
 
 type Block struct {
-	visible  bool
-	position BlockCoord
+	visible   bool
+	position  BlockCoord
+	occlusion float64
 }
 
 var chunkMap = map[ChunkCoord]*Chunk{}
@@ -48,7 +49,7 @@ var debugMode = false
 func Start() error {
 	rand.Seed(time.Now().Unix())
 
-	cubed := 4
+	cubed := 8
 	for x := 0; x < cubed; x++ {
 		for z := 0; z < cubed; z++ {
 			for y := 0; y < cubed; y++ {
@@ -71,7 +72,8 @@ func Start() error {
 				default:
 					chunk = newCubeChunk(false)
 				}*/
-				chunk := newFloatingRockChunk(ChunkCoord{x, y, z})
+				chunk := newFloatingRockChunk(ChunkCoord{x, y, z}, cubed)
+				//chunk := newSimplexChunk(ChunkCoord{x, y, z}, cubed)
 				chunk.position = ChunkCoord{x, y, z}
 				chunkMap[chunk.position] = chunk
 			}
@@ -343,6 +345,7 @@ func updateSetupList() {
 
 type RebuildData struct {
 	vertexBuffers [6][]float32
+	occBuffers    [6][]float32
 	chunk         *Chunk
 }
 
@@ -355,7 +358,7 @@ func updateRebuildList() {
 
 	select {
 	case rebuildData := <-rebuildCh:
-		rebuildData.chunk.SetChunkMesh(rebuildData.vertexBuffers)
+		rebuildData.chunk.SetChunkMesh(rebuildData)
 		rebuildData.chunk.IsRebuilding = false
 		fmt.Printf("rebuilds: %v rebuilt.\n", rebuildData.chunk.position)
 

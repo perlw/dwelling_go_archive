@@ -2,6 +2,7 @@ package chunkmanager
 
 import (
 	"dwelling/math/simplex"
+	"dwelling/math/vector"
 	"math"
 	"math/rand"
 )
@@ -116,11 +117,11 @@ func newWireCubeChunk() *Chunk {
 	return chunk
 }
 
-func newSimplexChunk(pos ChunkCoord) *Chunk {
+func newSimplexChunk(pos ChunkCoord, size int) *Chunk {
 	chunk := &Chunk{}
 
-	// Expecting 4x4x4 world
-	worldMax := float64(ChunkBase * 4)
+	// Expecting a perfect cube world
+	worldMax := float64(ChunkBase * size)
 	chunk.data = map[BlockCoord]*Block{}
 	for y := 0; y < ChunkBase; y++ {
 		for x := 0; x < ChunkBase; x++ {
@@ -140,17 +141,21 @@ func newSimplexChunk(pos ChunkCoord) *Chunk {
 		}
 	}
 
+	for index, block := range chunk.data {
+		block.occlusion = occlusion(chunk, index)
+	}
+
 	chunk.IsLoaded = true
 	chunk.MouseHit = false
 
 	return chunk
 }
 
-func newFloatingRockChunk(pos ChunkCoord) *Chunk {
+func newFloatingRockChunk(pos ChunkCoord, size int) *Chunk {
 	chunk := &Chunk{}
 
-	// Expecting 4x4x4 world
-	worldMax := float64(ChunkBase * 4)
+	// Expecting a perfect cube world
+	worldMax := float64(ChunkBase * size)
 	chunk.data = map[BlockCoord]*Block{}
 	for y := 0; y < ChunkBase; y++ {
 		for x := 0; x < ChunkBase; x++ {
@@ -186,8 +191,105 @@ func newFloatingRockChunk(pos ChunkCoord) *Chunk {
 		}
 	}
 
+	for index, block := range chunk.data {
+		block.occlusion = occlusion(chunk, index)
+	}
+
 	chunk.IsLoaded = true
 	chunk.MouseHit = false
 
 	return chunk
+}
+
+func newRayTestChunk() *Chunk {
+	chunk := &Chunk{}
+
+	chunk.data = map[BlockCoord]*Block{}
+	startX := ChunkBase / 2
+	startY := ChunkBase / 2
+	startZ := ChunkBase / 2
+
+	index := BlockCoord{startX, startY, startZ}
+	chunk.data[index] = &Block{
+		visible:  false,
+		position: index,
+	}
+
+	rays := goldenSectionSpiralRays(16)
+	for _, ray := range rays {
+		rayStep := ray.MulScalar(0.2)
+		currentStep := vector.Vector3f{float64(startX) + 0.5, float64(startY) + 0.5, float64(startZ) + 0.5}
+		lastBlock := BlockCoord{startX, startY, startZ}
+		for {
+			currBlock := BlockCoord{int(currentStep.X), int(currentStep.Y), int(currentStep.Z)}
+
+			if currBlock.X < 0 || currBlock.X >= ChunkBase || currBlock.Y < 0 || currBlock.Y >= ChunkBase || currBlock.Z < 0 || currBlock.Z >= ChunkBase {
+				break
+			}
+
+			if currBlock.X != lastBlock.X || currBlock.Y != lastBlock.Y || currBlock.Z != lastBlock.Z {
+				lastBlock = currBlock
+
+				index := currBlock
+				chunk.data[index] = &Block{
+					visible:  false,
+					position: index,
+				}
+			}
+
+			currentStep = currentStep.Add(rayStep)
+		}
+	}
+
+	chunk.IsLoaded = true
+	chunk.MouseHit = false
+
+	return chunk
+}
+
+// Port of Golden Section Spiral python code
+// from http://www.softimageblog.com/archives/115
+func goldenSectionSpiralRays(numRays int) []vector.Vector3f {
+	rays := []vector.Vector3f{}
+
+	increment := math.Pi * (3.0 - math.Sqrt(5.0))
+	offset := 2.0 / float64(numRays)
+	for t := 0; t < numRays; t++ {
+		y := (float64(t) * offset) - 1.0 + (offset / 2.0)
+		r := math.Sqrt(1 - (y * y))
+		phi := float64(t) * increment
+
+		rays = append(rays, vector.Vector3f{math.Cos(phi) * r, y, math.Sin(phi) * r})
+	}
+
+	return rays
+}
+
+func occlusion(chunk *Chunk, pos BlockCoord) float64 {
+	occFactor := 0.0
+	numRays := 16
+	rays := goldenSectionSpiralRays(numRays)
+	for _, ray := range rays {
+		rayStep := ray.MulScalar(0.2)
+		currentStep := vector.Vector3f{float64(pos.X) + 0.5, float64(pos.Y) + 0.5, float64(pos.Z) + 0.5}
+		lastBlock := pos
+		for {
+			currBlock := BlockCoord{int(currentStep.X), int(currentStep.Y), int(currentStep.Z)}
+
+			if currBlock.X < 0 || currBlock.X >= ChunkBase || currBlock.Y < 0 || currBlock.Y >= ChunkBase || currBlock.Z < 0 || currBlock.Z >= ChunkBase {
+				occFactor += 1.0
+				break
+			}
+
+			if currBlock.X != lastBlock.X || currBlock.Y != lastBlock.Y || currBlock.Z != lastBlock.Z {
+				lastBlock = currBlock
+				if _, ok := chunk.data[currBlock]; ok {
+					break
+				}
+			}
+
+			currentStep = currentStep.Add(rayStep)
+		}
+	}
+	return occFactor / float64(numRays)
 }
