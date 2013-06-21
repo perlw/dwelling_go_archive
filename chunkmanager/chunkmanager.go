@@ -49,11 +49,11 @@ var debugMode = false
 func Start() error {
 	rand.Seed(time.Now().Unix())
 
-	cubed := 8
+	cubed := 4
 	for x := 0; x < cubed; x++ {
 		for z := 0; z < cubed; z++ {
 			for y := 0; y < cubed; y++ {
-				/*val := rand.Intn(6)
+				val := rand.Intn(6)
 
 				var chunk *Chunk
 				switch val {
@@ -71,12 +71,18 @@ func Start() error {
 					chunk = newWireCubeChunk()
 				default:
 					chunk = newCubeChunk(false)
-				}*/
-				chunk := newFloatingRockChunk(ChunkCoord{x, y, z}, cubed)
+				}
+				//chunk := newFloatingRockChunk(ChunkCoord{x, y, z}, cubed)
 				//chunk := newSimplexChunk(ChunkCoord{x, y, z}, cubed)
 				chunk.position = ChunkCoord{x, y, z}
 				chunkMap[chunk.position] = chunk
 			}
+		}
+	}
+
+	for chnkPos, chunk := range chunkMap {
+		for blkPos, block := range chunk.data {
+			block.occlusion = occlusion(chnkPos, blkPos, cubed)
 		}
 	}
 
@@ -114,6 +120,84 @@ func GetChunksAroundChunk(chunkPos ChunkCoord) [6]*Chunk {
 	}
 
 	return chunks
+}
+
+// Port of Golden Section Spiral python code
+// from http://www.softimageblog.com/archives/115
+func goldenSectionSpiralRays(numRays int) []vector.Vector3f {
+	rays := []vector.Vector3f{}
+
+	increment := math.Pi * (3.0 - math.Sqrt(5.0))
+	offset := 2.0 / float64(numRays)
+	for t := 0; t < numRays; t++ {
+		y := (float64(t) * offset) - 1.0 + (offset / 2.0)
+		r := math.Sqrt(1 - (y * y))
+		phi := float64(t) * increment
+
+		rays = append(rays, vector.Vector3f{math.Cos(phi) * r, y, math.Sin(phi) * r})
+	}
+
+	return rays
+}
+
+func occlusion(chnkPos ChunkCoord, blkPos BlockCoord, size int) float64 {
+	occFactor := 0.0
+	numRays := 16
+	rays := goldenSectionSpiralRays(numRays)
+	for _, ray := range rays {
+		rayStep := ray.MulScalar(0.2)
+		currentStep := vector.Vector3f{float64((chnkPos.X*ChunkBase)+blkPos.X) + 0.5, float64((chnkPos.Y*ChunkBase)+blkPos.Y) + 0.5, float64((chnkPos.Z*ChunkBase)+blkPos.Z) + 0.5}
+		lastBlock := blkPos
+		currentChnkPos := chnkPos
+		currentChunk, _ := chunkMap[currentChnkPos]
+		for {
+			if currentStep.X < 0.0 || currentStep.X >= float64(ChunkBase*size) || currentStep.Y < 0.0 || currentStep.Y >= float64(ChunkBase*size) || currentStep.Z < 0.0 || currentStep.Z >= float64(ChunkBase*size) {
+				occFactor += 1.0
+				break
+			}
+
+			recalc := false
+			currBlock := BlockCoord{int(currentStep.X) - (currentChnkPos.X * ChunkBase), int(currentStep.Y) - (currentChnkPos.Y * ChunkBase), int(currentStep.Z) - (currentChnkPos.Z * ChunkBase)}
+			if currBlock.X < 0 {
+				currentChnkPos.X -= 1
+				recalc = true
+			}
+			if currBlock.X >= ChunkBase {
+				currentChnkPos.X += 1
+				recalc = true
+			}
+			if currBlock.Y < 0 {
+				currentChnkPos.Y -= 1
+				recalc = true
+			}
+			if currBlock.Y >= ChunkBase {
+				currentChnkPos.Y += 1
+				recalc = true
+			}
+			if currBlock.Z < 0 {
+				currentChnkPos.Z -= 1
+				recalc = true
+			}
+			if currBlock.Z >= ChunkBase {
+				currentChnkPos.Z += 1
+				recalc = true
+			}
+			if recalc {
+				currentChunk, _ = chunkMap[currentChnkPos]
+				currBlock = BlockCoord{int(currentStep.X) - (currentChnkPos.X * ChunkBase), int(currentStep.Y) - (currentChnkPos.Y * ChunkBase), int(currentStep.Z) - (currentChnkPos.Z * ChunkBase)}
+			}
+
+			if currBlock.X != lastBlock.X || currBlock.Y != lastBlock.Y || currBlock.Z != lastBlock.Z {
+				lastBlock = currBlock
+				if _, ok := currentChunk.data[currBlock]; ok {
+					break
+				}
+			}
+
+			currentStep = currentStep.Add(rayStep)
+		}
+	}
+	return occFactor / float64(numRays)
 }
 
 // Traces a ray against a box.
@@ -256,6 +340,7 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 								if !chnk.IsRebuilding {
 									delete(chnk.data, blkPos)
 									rebuildChunks[pos] = chnk
+									recalcOcclusion(chnk, blkPos)
 									rebuildNeighborsCheck(chnk.position, blkPos)
 								}
 
@@ -269,6 +354,14 @@ func ClickedInChunk(mx, my int, cam *camera.Camera) {
 			} else {
 				fmt.Println("nope...\n")
 			}
+		}
+	}
+}
+
+func recalcOcclusion(chunk *Chunk, blkPos BlockCoord) {
+	for index, block := range chunk.data {
+		if block.visible {
+			block.occlusion = occlusion(chunk.position, index, 4)
 		}
 	}
 }

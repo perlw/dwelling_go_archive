@@ -2,7 +2,6 @@ package chunkmanager
 
 import (
 	"dwelling/math/simplex"
-	"dwelling/math/vector"
 	"math"
 	"math/rand"
 )
@@ -141,10 +140,6 @@ func newSimplexChunk(pos ChunkCoord, size int) *Chunk {
 		}
 	}
 
-	for index, block := range chunk.data {
-		block.occlusion = occlusion(chunk, index)
-	}
-
 	chunk.IsLoaded = true
 	chunk.MouseHit = false
 
@@ -191,17 +186,13 @@ func newFloatingRockChunk(pos ChunkCoord, size int) *Chunk {
 		}
 	}
 
-	for index, block := range chunk.data {
-		block.occlusion = occlusion(chunk, index)
-	}
-
 	chunk.IsLoaded = true
 	chunk.MouseHit = false
 
 	return chunk
 }
 
-func newRayTestChunk() *Chunk {
+/*func newRayTestChunk() *Chunk {
 	chunk := &Chunk{}
 
 	chunk.data = map[BlockCoord]*Block{}
@@ -293,3 +284,4 @@ func occlusion(chunk *Chunk, pos BlockCoord) float64 {
 	}
 	return occFactor / float64(numRays)
 }
+*/

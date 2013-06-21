@@ -76,6 +76,12 @@ func main() {
 		case <-camCh:
 			cam.UpdateViewMatrix()
 			cam.UpdatePVMatrix()
+			if !debugMode {
+				cam.UpdateFrustum()
+				cam.CullPos.X = cam.Pos.X
+				cam.CullPos.Y = cam.Pos.Y
+				cam.CullPos.Z = cam.Pos.Z
+			}
 		case debugMode = <-debugCh:
 			if debugMode {
 				chunkmanager.SetDebug(true)
@@ -205,11 +211,13 @@ func logicLoop(camCh chan<- bool, debugCh chan<- bool, logicCh chan<- bool, exit
 				}
 
 				if glfw.MouseButton(glfw.MouseLeft) == glfw.KeyPress {
+					// Dangerous, race condition!
 					mx, my := glfw.MousePos()
 					chunkmanager.ClickedInChunk(mx, my, cam)
 				}
 
 				if debugMode {
+					// Dangerous, race condition!
 					if glfw.Key('F') == glfw.KeyPress {
 						cam.UpdateFrustum()
 					}
@@ -224,12 +232,6 @@ func logicLoop(camCh chan<- bool, debugCh chan<- bool, logicCh chan<- bool, exit
 			currentTick = newTick
 
 			if update {
-				if !debugMode {
-					cam.UpdateFrustum()
-					cam.CullPos.X = cam.Pos.X
-					cam.CullPos.Y = cam.Pos.Y
-					cam.CullPos.Z = cam.Pos.Z
-				}
 				camCh <- true
 			}
 			logicCh <- true

@@ -290,6 +290,11 @@ func (chunk *Chunk) SetChunkMesh(rebuildData RebuildData) {
 				gl.BindBuffer(gl.ARRAY_BUFFER, chunk.mesh.vertexBufferIds[t])
 				gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
 				gl.BufferData(gl.ARRAY_BUFFER, size, gl.Pointer(&vertexBuffers[t][0]), gl.STATIC_DRAW)
+
+				size = gl.Sizeiptr(sizeFloat * len(occBuffers[t]))
+				gl.BindBuffer(gl.ARRAY_BUFFER, chunk.mesh.occBufferIds[t])
+				gl.VertexAttribPointer(0, 1, gl.FLOAT, gl.FALSE, 0, nil)
+				gl.BufferData(gl.ARRAY_BUFFER, size, gl.Pointer(&occBuffers[t][0]), gl.STATIC_DRAW)
 			} else {
 				chunk.mesh.vertexBufferIds[t] = createMeshBuffer(&vertexBuffers[t], len(vertexBuffers[t]))
 				chunk.mesh.occBufferIds[t] = createMeshBuffer(&occBuffers[t], len(occBuffers[t]))

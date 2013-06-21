@@ -33,6 +33,11 @@ func Render(cam *camera.Camera) {
 	setRendererData()
 	chunkShader.Use()
 	chunkShader.SetUniformMatrix("pv", cam.PVMatrix)
+	if debugMode {
+		chunkShader.SetUniformInt("onlyOccFac", 1)
+	} else {
+		chunkShader.SetUniformInt("onlyOccFac", 0)
+	}
 
 	for pos, chnk := range renderChunks {
 		posx := float64(pos.X * ChunkBase)

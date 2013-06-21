@@ -75,12 +75,16 @@ in vec3 eyeNormal;
 out vec4 fragment;
 
 uniform int mouseHit;
+uniform int onlyOccFac;
 
 void main() {
 	vec3 outside = sh_light(eyeNormal, beach);
 	vec3 inside = sh_light(eyeNormal, groove)*0.004;
 	vec3 ambient = mix(inside, outside, occFac);
 
-	fragment = vec4(gamma(ambient * 0.5), 1.0);
-	//fragment = vec4(occFac, occFac, occFac, 1.0);
+	if (onlyOccFac == 1) {
+		fragment = vec4(occFac, occFac, occFac, 1.0);
+	} else {
+		fragment = vec4(gamma(ambient * 0.5), 1.0);
+	}
 }
