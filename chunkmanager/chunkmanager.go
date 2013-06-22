@@ -438,6 +438,7 @@ func updateSetupList() {
 
 type RebuildData struct {
 	vertexBuffers [6][]float32
+	indexBuffers  [6][]uint32
 	occBuffers    [6][]float32
 	chunk         *Chunk
 }
