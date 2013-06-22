@@ -50,6 +50,14 @@ func LoadShaderProgram(programName string) (*ShaderProgram, error) {
 
 	// Program
 	program := gl.CreateProgram()
+
+	glPosString := gl.GLString("position")
+	defer gl.GLStringFree(glPosString)
+	glOccString := gl.GLString("occFactor")
+	defer gl.GLStringFree(glOccString)
+	gl.BindAttribLocation(program, 0, glPosString)
+	gl.BindAttribLocation(program, 1, glOccString)
+
 	gl.AttachShader(program, vertexObj)
 	gl.AttachShader(program, fragmentObj)
 
@@ -89,6 +97,12 @@ func (program *ShaderProgram) Use() {
 
 func (program *ShaderProgram) GetProgramId() gl.Uint {
 	return program.programId
+}
+
+func (program *ShaderProgram) BindAttribLocation(position int, location string) {
+	glLocString := gl.GLString(location)
+	defer gl.GLStringFree(glLocString)
+	gl.BindAttribLocation(program.programId, gl.Uint(position), glLocString)
 }
 
 func (program *ShaderProgram) SetUniformInt(location string, value int) error {

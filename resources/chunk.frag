@@ -87,5 +87,4 @@ void main() {
 	} else {
 		fragment = vec4(gamma(ambient * 0.5), 1.0);
 	}
-	//fragment = vec4(0.0, 0.0, 0.0, 1.0);
 }

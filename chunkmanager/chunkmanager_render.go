@@ -39,6 +39,9 @@ func Render(cam *camera.Camera) {
 		chunkShader.SetUniformInt("onlyOccFac", 0)
 	}
 
+	chunkShader.BindAttribLocation(0, "vertexPos")
+	chunkShader.BindAttribLocation(1, "occFactor")
+
 	for pos, chnk := range renderChunks {
 		posx := float64(pos.X * ChunkBase)
 		posy := float64(pos.Y * ChunkBase)
