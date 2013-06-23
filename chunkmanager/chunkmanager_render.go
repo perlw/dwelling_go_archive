@@ -12,7 +12,16 @@ var chunkShader *shader.ShaderProgram
 
 func setUpRenderer() error {
 	var err error
-	chunkShader, err = shader.LoadShaderProgram("chunk")
+	chunkShader, err = shader.LoadShaderProgram("chunk", []shader.AttribLocation{
+		{
+			Position: 0,
+			Location: "vertexPos",
+		},
+		{
+			Position: 1,
+			Location: "occFactor",
+		},
+	})
 	if err != nil {
 		return err
 	}
@@ -38,9 +47,6 @@ func Render(cam *camera.Camera) {
 	} else {
 		chunkShader.SetUniformInt("onlyOccFac", 0)
 	}
-
-	chunkShader.BindAttribLocation(0, "vertexPos")
-	chunkShader.BindAttribLocation(1, "occFactor")
 
 	for pos, chnk := range renderChunks {
 		posx := float64(pos.X * ChunkBase)

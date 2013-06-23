@@ -18,7 +18,7 @@ type DebugData struct {
 
 func (cam *Camera) setUpDebugRenderer() error {
 	var err error
-	cam.debugData.debugShader, err = shader.LoadShaderProgram("debug")
+	cam.debugData.debugShader, err = shader.LoadShaderProgram("debug", nil)
 	if err != nil {
 		return err
 	}

@@ -15,7 +15,12 @@ type ShaderProgram struct {
 	uniformIds map[string]gl.Int
 }
 
-func LoadShaderProgram(programName string) (*ShaderProgram, error) {
+type AttribLocation struct {
+	Position int
+	Location string
+}
+
+func LoadShaderProgram(programName string, attribLocations []AttribLocation) (*ShaderProgram, error) {
 	// Vertex shader
 	vertexFile, err := ioutil.ReadFile(programName + ".vert")
 	if err != nil {
@@ -51,12 +56,12 @@ func LoadShaderProgram(programName string) (*ShaderProgram, error) {
 	// Program
 	program := gl.CreateProgram()
 
-	glPosString := gl.GLString("position")
-	defer gl.GLStringFree(glPosString)
-	glOccString := gl.GLString("occFactor")
-	defer gl.GLStringFree(glOccString)
-	gl.BindAttribLocation(program, 0, glPosString)
-	gl.BindAttribLocation(program, 1, glOccString)
+	// Bind attriblocations
+	for _, attribLoc := range attribLocations {
+		glLocString := gl.GLString(attribLoc.Location)
+		gl.GLStringFree(glLocString)
+		gl.BindAttribLocation(program, gl.Uint(attribLoc.Position), glLocString)
+	}
 
 	gl.AttachShader(program, vertexObj)
 	gl.AttachShader(program, fragmentObj)
@@ -97,12 +102,6 @@ func (program *ShaderProgram) Use() {
 
 func (program *ShaderProgram) GetProgramId() gl.Uint {
 	return program.programId
-}
-
-func (program *ShaderProgram) BindAttribLocation(position int, location string) {
-	glLocString := gl.GLString(location)
-	defer gl.GLStringFree(glLocString)
-	gl.BindAttribLocation(program.programId, gl.Uint(position), glLocString)
 }
 
 func (program *ShaderProgram) SetUniformInt(location string, value int) error {
