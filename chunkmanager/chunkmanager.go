@@ -248,7 +248,7 @@ func occlusion(chnkPos ChunkCoord, blkPos BlockCoord, size int) [6]float64 {
 	}
 
 	for t := range occFactor {
-		occFactor[t] = occFactor[t] / float64(numRays)
+		occFactor[t] = occFactor[t] / float64(numRays/2)
 	}
 
 	return occFactor

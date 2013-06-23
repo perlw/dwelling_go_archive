@@ -79,7 +79,7 @@ uniform int onlyOccFac;
 
 void main() {
 	vec3 outside = sh_light(eyeNormal, beach);
-	vec3 inside = sh_light(eyeNormal, groove)*0.004;
+	vec3 inside = sh_light(eyeNormal, groove)*0.04;
 	vec3 ambient = mix(inside, outside, occFac);
 
 	if (onlyOccFac == 1) {
