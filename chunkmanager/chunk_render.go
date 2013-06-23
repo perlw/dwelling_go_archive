@@ -146,7 +146,6 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 		z := float32(pos.Z)
 
 		sides := 0
-		occFactor := float32(chunk.data[pos].occlusion)
 		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y, pos.Z + 1}]; !ok {
 			skip := false
 			if pos.Z == ChunkBase-1 && chunks[FRONT] != nil {
@@ -157,6 +156,7 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 
 			if !skip {
 				sides++
+				occFactor := float32(chunk.data[pos].occlusion[FRONT])
 				appendChunkFace(&vertexBuffers[FRONT], &indexBuffers[FRONT], &occBuffers[FRONT], occFactor, x, y, z, FRONT)
 			}
 		}
@@ -170,6 +170,7 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 
 			if !skip {
 				sides++
+				occFactor := float32(chunk.data[pos].occlusion[BACK])
 				appendChunkFace(&vertexBuffers[BACK], &indexBuffers[BACK], &occBuffers[BACK], occFactor, x, y, z, BACK)
 			}
 		}
@@ -183,6 +184,7 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 
 			if !skip {
 				sides++
+				occFactor := float32(chunk.data[pos].occlusion[LEFT])
 				appendChunkFace(&vertexBuffers[LEFT], &indexBuffers[LEFT], &occBuffers[LEFT], occFactor, x, y, z, LEFT)
 			}
 		}
@@ -196,6 +198,7 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 
 			if !skip {
 				sides++
+				occFactor := float32(chunk.data[pos].occlusion[RIGHT])
 				appendChunkFace(&vertexBuffers[RIGHT], &indexBuffers[RIGHT], &occBuffers[RIGHT], occFactor, x, y, z, RIGHT)
 			}
 		}
@@ -209,6 +212,7 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 
 			if !skip {
 				sides++
+				occFactor := float32(chunk.data[pos].occlusion[TOP])
 				appendChunkFace(&vertexBuffers[TOP], &indexBuffers[TOP], &occBuffers[TOP], occFactor, x, y, z, TOP)
 			}
 		}
@@ -222,6 +226,7 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 
 			if !skip {
 				sides++
+				occFactor := float32(chunk.data[pos].occlusion[BOTTOM])
 				appendChunkFace(&vertexBuffers[BOTTOM], &indexBuffers[BOTTOM], &occBuffers[BOTTOM], occFactor, x, y, z, BOTTOM)
 			}
 		}

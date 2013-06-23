@@ -33,7 +33,7 @@ type Chunk struct {
 type Block struct {
 	visible   bool
 	position  BlockCoord
-	occlusion float64
+	occlusion [6]float64
 }
 
 var chunkMap = map[ChunkCoord]*Chunk{}
@@ -140,64 +140,118 @@ func goldenSectionSpiralRays(numRays int) []vector.Vector3f {
 	return rays
 }
 
-func occlusion(chnkPos ChunkCoord, blkPos BlockCoord, size int) float64 {
-	occFactor := 0.0
+func occlusion(chnkPos ChunkCoord, blkPos BlockCoord, size int) [6]float64 {
+	occFactor := [6]float64{0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
 	numRays := 16
 	rays := goldenSectionSpiralRays(numRays)
-	for _, ray := range rays {
-		rayStep := ray.MulScalar(0.2)
-		currentStep := vector.Vector3f{float64((chnkPos.X*ChunkBase)+blkPos.X) + 0.5, float64((chnkPos.Y*ChunkBase)+blkPos.Y) + 0.5, float64((chnkPos.Z*ChunkBase)+blkPos.Z) + 0.5}
-		lastBlock := blkPos
-		currentChnkPos := chnkPos
-		currentChunk, _ := chunkMap[currentChnkPos]
-		for {
-			if currentStep.X < 0.0 || currentStep.X >= float64(ChunkBase*size) || currentStep.Y < 0.0 || currentStep.Y >= float64(ChunkBase*size) || currentStep.Z < 0.0 || currentStep.Z >= float64(ChunkBase*size) {
-				occFactor += 1.0
-				break
+	for t := 0; t < 6; t++ {
+		for _, ray := range rays {
+			currentStep := vector.Vector3f{}
+			switch t {
+			case FRONT:
+				if ray.Z < 0.0 {
+					continue
+				}
+				currentStep.X = float64((chnkPos.X*ChunkBase)+blkPos.X) + 0.5
+				currentStep.Y = float64((chnkPos.Y*ChunkBase)+blkPos.Y) + 0.5
+				currentStep.Z = float64((chnkPos.Z*ChunkBase)+blkPos.Z) + 1.0
+			case BACK:
+				if ray.Z > 0.0 {
+					continue
+				}
+				currentStep.X = float64((chnkPos.X*ChunkBase)+blkPos.X) + 0.5
+				currentStep.Y = float64((chnkPos.Y*ChunkBase)+blkPos.Y) + 0.5
+				currentStep.Z = float64((chnkPos.Z*ChunkBase)+blkPos.Z) + 0.0
+			case LEFT:
+				if ray.X > 0.0 {
+					continue
+				}
+				currentStep.X = float64((chnkPos.X*ChunkBase)+blkPos.X) + 0.0
+				currentStep.Y = float64((chnkPos.Y*ChunkBase)+blkPos.Y) + 0.5
+				currentStep.Z = float64((chnkPos.Z*ChunkBase)+blkPos.Z) + 0.5
+			case RIGHT:
+				if ray.X < 0.0 {
+					continue
+				}
+				currentStep.X = float64((chnkPos.X*ChunkBase)+blkPos.X) + 1.0
+				currentStep.Y = float64((chnkPos.Y*ChunkBase)+blkPos.Y) + 0.5
+				currentStep.Z = float64((chnkPos.Z*ChunkBase)+blkPos.Z) + 0.5
+			case TOP:
+				if ray.Y < 0.0 {
+					continue
+				}
+				currentStep.X = float64((chnkPos.X*ChunkBase)+blkPos.X) + 0.5
+				currentStep.Y = float64((chnkPos.Y*ChunkBase)+blkPos.Y) + 1.0
+				currentStep.Z = float64((chnkPos.Z*ChunkBase)+blkPos.Z) + 0.5
+			case BOTTOM:
+				if ray.Y > 0.0 {
+					continue
+				}
+				currentStep.X = float64((chnkPos.X*ChunkBase)+blkPos.X) + 0.5
+				currentStep.Y = float64((chnkPos.Y*ChunkBase)+blkPos.Y) + 0.0
+				currentStep.Z = float64((chnkPos.Z*ChunkBase)+blkPos.Z) + 0.5
+			default:
+				continue
 			}
 
-			recalc := false
-			currBlock := BlockCoord{int(currentStep.X) - (currentChnkPos.X * ChunkBase), int(currentStep.Y) - (currentChnkPos.Y * ChunkBase), int(currentStep.Z) - (currentChnkPos.Z * ChunkBase)}
-			if currBlock.X < 0 {
-				currentChnkPos.X -= 1
-				recalc = true
-			}
-			if currBlock.X >= ChunkBase {
-				currentChnkPos.X += 1
-				recalc = true
-			}
-			if currBlock.Y < 0 {
-				currentChnkPos.Y -= 1
-				recalc = true
-			}
-			if currBlock.Y >= ChunkBase {
-				currentChnkPos.Y += 1
-				recalc = true
-			}
-			if currBlock.Z < 0 {
-				currentChnkPos.Z -= 1
-				recalc = true
-			}
-			if currBlock.Z >= ChunkBase {
-				currentChnkPos.Z += 1
-				recalc = true
-			}
-			if recalc {
-				currentChunk, _ = chunkMap[currentChnkPos]
-				currBlock = BlockCoord{int(currentStep.X) - (currentChnkPos.X * ChunkBase), int(currentStep.Y) - (currentChnkPos.Y * ChunkBase), int(currentStep.Z) - (currentChnkPos.Z * ChunkBase)}
-			}
-
-			if currBlock.X != lastBlock.X || currBlock.Y != lastBlock.Y || currBlock.Z != lastBlock.Z {
-				lastBlock = currBlock
-				if _, ok := currentChunk.data[currBlock]; ok {
+			rayStep := ray.MulScalar(0.2)
+			lastBlock := blkPos
+			currentChnkPos := chnkPos
+			currentChunk, _ := chunkMap[currentChnkPos]
+			for {
+				if currentStep.X < 0.0 || currentStep.X >= float64(ChunkBase*size) || currentStep.Y < 0.0 || currentStep.Y >= float64(ChunkBase*size) || currentStep.Z < 0.0 || currentStep.Z >= float64(ChunkBase*size) {
+					occFactor[t] += 1.0
 					break
 				}
-			}
 
-			currentStep = currentStep.Add(rayStep)
+				recalc := false
+				currBlock := BlockCoord{int(currentStep.X) - (currentChnkPos.X * ChunkBase), int(currentStep.Y) - (currentChnkPos.Y * ChunkBase), int(currentStep.Z) - (currentChnkPos.Z * ChunkBase)}
+				if currBlock.X < 0 {
+					currentChnkPos.X -= 1
+					recalc = true
+				}
+				if currBlock.X >= ChunkBase {
+					currentChnkPos.X += 1
+					recalc = true
+				}
+				if currBlock.Y < 0 {
+					currentChnkPos.Y -= 1
+					recalc = true
+				}
+				if currBlock.Y >= ChunkBase {
+					currentChnkPos.Y += 1
+					recalc = true
+				}
+				if currBlock.Z < 0 {
+					currentChnkPos.Z -= 1
+					recalc = true
+				}
+				if currBlock.Z >= ChunkBase {
+					currentChnkPos.Z += 1
+					recalc = true
+				}
+				if recalc {
+					currentChunk, _ = chunkMap[currentChnkPos]
+					currBlock = BlockCoord{int(currentStep.X) - (currentChnkPos.X * ChunkBase), int(currentStep.Y) - (currentChnkPos.Y * ChunkBase), int(currentStep.Z) - (currentChnkPos.Z * ChunkBase)}
+				}
+
+				if currBlock.X != lastBlock.X || currBlock.Y != lastBlock.Y || currBlock.Z != lastBlock.Z {
+					lastBlock = currBlock
+					if _, ok := currentChunk.data[currBlock]; ok {
+						break
+					}
+				}
+
+				currentStep = currentStep.Add(rayStep)
+			}
 		}
 	}
-	return occFactor / float64(numRays)
+
+	for t := range occFactor {
+		occFactor[t] = occFactor[t] / float64(numRays)
+	}
+
+	return occFactor
 }
 
 // Traces a ray against a box.
