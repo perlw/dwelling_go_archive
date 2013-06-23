@@ -28,6 +28,7 @@ var chunkNormals = [6]vector.Vector3f{
 }
 
 type ChunkMesh struct {
+	vao             [6]gl.Uint
 	vertexBufferIds [6]gl.Uint
 	indexBufferIds  [6]gl.Uint
 	occBufferIds    [6]gl.Uint
@@ -250,6 +251,14 @@ func (chunk *Chunk) SetChunkMesh(rebuildData RebuildData) {
 		chunk.mesh.numVertices[t] = gl.Sizei(len(vertexBuffers[t]))
 		chunk.mesh.numIndices[t] = gl.Sizei(len(indexBuffers[t]))
 		if chunk.mesh.numVertices[t] > 0 && chunk.mesh.numIndices[t] > 0 {
+			if chunk.mesh.vao[t] == 0 {
+				gl.GenVertexArrays(1, &chunk.mesh.vao[t])
+				gl.BindVertexArray(chunk.mesh.vao[t])
+				gl.EnableVertexAttribArray(0)
+				gl.EnableVertexAttribArray(1)
+			}
+
+			gl.BindVertexArray(chunk.mesh.vao[t])
 			if chunk.mesh.vertexBufferIds[t] > 0 {
 				// Refactor this shit!
 				sizeFloat := int(unsafe.Sizeof([1]float32{}))
@@ -272,6 +281,15 @@ func (chunk *Chunk) SetChunkMesh(rebuildData RebuildData) {
 				chunk.mesh.indexBufferIds[t] = createIndexBuffer(&indexBuffers[t], len(indexBuffers[t]))
 				chunk.mesh.occBufferIds[t] = createMeshBuffer(&occBuffers[t], len(occBuffers[t]))
 			}
+
+			// Vertices
+			gl.BindBuffer(gl.ARRAY_BUFFER, chunk.mesh.vertexBufferIds[t])
+			gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
+			// Occlusion factor
+			gl.BindBuffer(gl.ARRAY_BUFFER, chunk.mesh.occBufferIds[t])
+			gl.VertexAttribPointer(1, 1, gl.FLOAT, gl.FALSE, 0, nil)
+			// Indices
+			gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, chunk.mesh.indexBufferIds[t])
 		}
 	}
 
@@ -322,14 +340,7 @@ func (chunk *Chunk) RenderChunk(chunkShader *shader.ShaderProgram, cam vector.Ve
 }
 
 func (chunk *Chunk) renderMeshBuffer(side int, wireframe bool) {
-	// Vertices
-	gl.BindBuffer(gl.ARRAY_BUFFER, chunk.mesh.vertexBufferIds[side])
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 0, nil)
-	// Occlusion factor
-	gl.BindBuffer(gl.ARRAY_BUFFER, chunk.mesh.occBufferIds[side])
-	gl.VertexAttribPointer(1, 1, gl.FLOAT, gl.FALSE, 0, nil)
-	// Indices
-	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, chunk.mesh.indexBufferIds[side])
+	gl.BindVertexArray(chunk.mesh.vao[side])
 
 	if wireframe {
 		gl.DrawElements(gl.LINES, chunk.mesh.numIndices[side], gl.UNSIGNED_INT, nil)
@@ -337,6 +348,5 @@ func (chunk *Chunk) renderMeshBuffer(side int, wireframe bool) {
 		gl.DrawElements(gl.TRIANGLES, chunk.mesh.numIndices[side], gl.UNSIGNED_INT, nil)
 	}
 
-	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
-	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
+	gl.BindVertexArray(0)
 }

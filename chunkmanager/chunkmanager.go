@@ -447,9 +447,6 @@ var rebuildCh = make(chan RebuildData)
 var numRebuilding = 0
 
 func updateRebuildList() {
-	// Note: Not optimal
-	setRendererData()
-
 	select {
 	case rebuildData := <-rebuildCh:
 		rebuildData.chunk.SetChunkMesh(rebuildData)
