@@ -59,8 +59,8 @@ func LoadShaderProgram(programName string, attribLocations []AttribLocation) (*S
 	// Bind attriblocations
 	for _, attribLoc := range attribLocations {
 		glLocString := gl.GLString(attribLoc.Location)
-		gl.GLStringFree(glLocString)
 		gl.BindAttribLocation(program, gl.Uint(attribLoc.Position), glLocString)
+		gl.GLStringFree(glLocString)
 	}
 
 	gl.AttachShader(program, vertexObj)
