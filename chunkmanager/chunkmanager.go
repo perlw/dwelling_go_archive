@@ -53,7 +53,7 @@ func Start() error {
 	for x := 0; x < cubed; x++ {
 		for z := 0; z < cubed; z++ {
 			for y := 0; y < cubed; y++ {
-				/*val := rand.Intn(6)
+				val := rand.Intn(6)
 
 				var chunk *Chunk
 				switch val {
@@ -71,9 +71,9 @@ func Start() error {
 					chunk = newWireCubeChunk()
 				default:
 					chunk = newCubeChunk(false)
-				}*/
+				}
 				//chunk := newFloatingRockChunk(ChunkCoord{x, y, z}, cubed)
-				chunk := newSimplexChunk(ChunkCoord{x, y, z}, cubed)
+				//chunk := newSimplexChunk(ChunkCoord{x, y, z}, cubed)
 				chunk.position = ChunkCoord{x, y, z}
 				chunkMap[chunk.position] = chunk
 			}

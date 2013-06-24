@@ -49,9 +49,9 @@ func appendChunkFace(faceBuffer *[]float32, indexBuffer *[]uint32, occBuffer *[]
 		}
 		vertices = [4]vector.Vector4f{
 			{float64(x), float64(y), float64(z) + 1.0, avgOcc[0]},
-			{float64(x) + 1.0, float64(y), float64(z) + 1.0, avgOcc[0]},
-			{float64(x) + 1.0, float64(y) + 1.0, float64(z) + 1.0, avgOcc[0]},
-			{float64(x), float64(y) + 1.0, float64(z) + 1.0, avgOcc[0]},
+			{float64(x) + 1.0, float64(y), float64(z) + 1.0, avgOcc[1]},
+			{float64(x) + 1.0, float64(y) + 1.0, float64(z) + 1.0, avgOcc[2]},
+			{float64(x), float64(y) + 1.0, float64(z) + 1.0, avgOcc[3]},
 		}
 
 	case BACK:
@@ -63,9 +63,9 @@ func appendChunkFace(faceBuffer *[]float32, indexBuffer *[]uint32, occBuffer *[]
 		}
 		vertices = [4]vector.Vector4f{
 			{float64(x) + 1.0, float64(y) + 1.0, float64(z), avgOcc[0]},
-			{float64(x) + 1.0, float64(y), float64(z), avgOcc[0]},
-			{float64(x), float64(y), float64(z), avgOcc[0]},
-			{float64(x), float64(y) + 1.0, float64(z), avgOcc[0]},
+			{float64(x) + 1.0, float64(y), float64(z), avgOcc[1]},
+			{float64(x), float64(y), float64(z), avgOcc[2]},
+			{float64(x), float64(y) + 1.0, float64(z), avgOcc[3]},
 		}
 
 	case LEFT:
@@ -77,9 +77,9 @@ func appendChunkFace(faceBuffer *[]float32, indexBuffer *[]uint32, occBuffer *[]
 		}
 		vertices = [4]vector.Vector4f{
 			{float64(x), float64(y), float64(z), avgOcc[0]},
-			{float64(x), float64(y), float64(z) + 1.0, avgOcc[0]},
-			{float64(x), float64(y) + 1.0, float64(z) + 1.0, avgOcc[0]},
-			{float64(x), float64(y) + 1.0, float64(z), avgOcc[0]},
+			{float64(x), float64(y), float64(z) + 1.0, avgOcc[1]},
+			{float64(x), float64(y) + 1.0, float64(z) + 1.0, avgOcc[2]},
+			{float64(x), float64(y) + 1.0, float64(z), avgOcc[3]},
 		}
 
 	case RIGHT:
@@ -91,9 +91,9 @@ func appendChunkFace(faceBuffer *[]float32, indexBuffer *[]uint32, occBuffer *[]
 		}
 		vertices = [4]vector.Vector4f{
 			{float64(x) + 1.0, float64(y) + 1.0, float64(z) + 1.0, avgOcc[0]},
-			{float64(x) + 1.0, float64(y), float64(z) + 1.0, avgOcc[0]},
-			{float64(x) + 1.0, float64(y), float64(z), avgOcc[0]},
-			{float64(x) + 1.0, float64(y) + 1.0, float64(z), avgOcc[0]},
+			{float64(x) + 1.0, float64(y), float64(z) + 1.0, avgOcc[1]},
+			{float64(x) + 1.0, float64(y), float64(z), avgOcc[2]},
+			{float64(x) + 1.0, float64(y) + 1.0, float64(z), avgOcc[3]},
 		}
 
 	case TOP:
@@ -105,9 +105,9 @@ func appendChunkFace(faceBuffer *[]float32, indexBuffer *[]uint32, occBuffer *[]
 		}
 		vertices = [4]vector.Vector4f{
 			{float64(x) + 1.0, float64(y) + 1.0, float64(z) + 1.0, avgOcc[0]},
-			{float64(x) + 1.0, float64(y) + 1.0, float64(z), avgOcc[0]},
-			{float64(x), float64(y) + 1.0, float64(z), avgOcc[0]},
-			{float64(x), float64(y) + 1.0, float64(z) + 1.0, avgOcc[0]},
+			{float64(x) + 1.0, float64(y) + 1.0, float64(z), avgOcc[1]},
+			{float64(x), float64(y) + 1.0, float64(z), avgOcc[2]},
+			{float64(x), float64(y) + 1.0, float64(z) + 1.0, avgOcc[3]},
 		}
 
 	case BOTTOM:
@@ -119,9 +119,9 @@ func appendChunkFace(faceBuffer *[]float32, indexBuffer *[]uint32, occBuffer *[]
 		}
 		vertices = [4]vector.Vector4f{
 			{float64(x), float64(y), float64(z), avgOcc[0]},
-			{float64(x) + 1.0, float64(y), float64(z), avgOcc[0]},
-			{float64(x) + 1.0, float64(y), float64(z) + 1.0, avgOcc[0]},
-			{float64(x), float64(y), float64(z) + 1.0, avgOcc[0]},
+			{float64(x) + 1.0, float64(y), float64(z), avgOcc[1]},
+			{float64(x) + 1.0, float64(y), float64(z) + 1.0, avgOcc[2]},
+			{float64(x), float64(y), float64(z) + 1.0, avgOcc[3]},
 		}
 
 	default:
