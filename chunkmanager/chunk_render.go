@@ -36,56 +36,92 @@ type ChunkMesh struct {
 	numIndices      [6]gl.Sizei
 }
 
-func appendChunkFace(faceBuffer *[]float32, indexBuffer *[]uint32, occBuffer *[]float32, occFactor, x, y, z float32, face int) {
-	var vertices [4]vector.Vector3f
+func appendChunkFace(faceBuffer *[]float32, indexBuffer *[]uint32, occBuffer *[]float32, occFactor [6]float64, x, y, z float32, face int) {
+	var vertices [4]vector.Vector4f
 
 	switch face {
 	case FRONT:
-		vertices = [4]vector.Vector3f{
-			{float64(x), float64(y), float64(z) + 1.0},
-			{float64(x) + 1.0, float64(y), float64(z) + 1.0},
-			{float64(x) + 1.0, float64(y) + 1.0, float64(z) + 1.0},
-			{float64(x), float64(y) + 1.0, float64(z) + 1.0},
+		avgOcc := [4]float64{
+			(occFactor[FRONT] + occFactor[LEFT] + occFactor[BOTTOM]) / 3.0,
+			(occFactor[FRONT] + occFactor[RIGHT] + occFactor[BOTTOM]) / 3.0,
+			(occFactor[FRONT] + occFactor[RIGHT] + occFactor[TOP]) / 3.0,
+			(occFactor[FRONT] + occFactor[LEFT] + occFactor[TOP]) / 3.0,
+		}
+		vertices = [4]vector.Vector4f{
+			{float64(x), float64(y), float64(z) + 1.0, avgOcc[0]},
+			{float64(x) + 1.0, float64(y), float64(z) + 1.0, avgOcc[0]},
+			{float64(x) + 1.0, float64(y) + 1.0, float64(z) + 1.0, avgOcc[0]},
+			{float64(x), float64(y) + 1.0, float64(z) + 1.0, avgOcc[0]},
 		}
 
 	case BACK:
-		vertices = [4]vector.Vector3f{
-			{float64(x) + 1.0, float64(y) + 1.0, float64(z)},
-			{float64(x) + 1.0, float64(y), float64(z)},
-			{float64(x), float64(y), float64(z)},
-			{float64(x), float64(y) + 1.0, float64(z)},
+		avgOcc := [4]float64{
+			(occFactor[BACK] + occFactor[RIGHT] + occFactor[TOP]) / 3.0,
+			(occFactor[BACK] + occFactor[RIGHT] + occFactor[BOTTOM]) / 3.0,
+			(occFactor[BACK] + occFactor[LEFT] + occFactor[BOTTOM]) / 3.0,
+			(occFactor[BACK] + occFactor[LEFT] + occFactor[TOP]) / 3.0,
+		}
+		vertices = [4]vector.Vector4f{
+			{float64(x) + 1.0, float64(y) + 1.0, float64(z), avgOcc[0]},
+			{float64(x) + 1.0, float64(y), float64(z), avgOcc[0]},
+			{float64(x), float64(y), float64(z), avgOcc[0]},
+			{float64(x), float64(y) + 1.0, float64(z), avgOcc[0]},
 		}
 
 	case LEFT:
-		vertices = [4]vector.Vector3f{
-			{float64(x), float64(y), float64(z)},
-			{float64(x), float64(y), float64(z) + 1.0},
-			{float64(x), float64(y) + 1.0, float64(z) + 1.0},
-			{float64(x), float64(y) + 1.0, float64(z)},
+		avgOcc := [4]float64{
+			(occFactor[LEFT] + occFactor[BACK] + occFactor[BOTTOM]) / 3.0,
+			(occFactor[LEFT] + occFactor[FRONT] + occFactor[BOTTOM]) / 3.0,
+			(occFactor[LEFT] + occFactor[FRONT] + occFactor[TOP]) / 3.0,
+			(occFactor[LEFT] + occFactor[BACK] + occFactor[TOP]) / 3.0,
+		}
+		vertices = [4]vector.Vector4f{
+			{float64(x), float64(y), float64(z), avgOcc[0]},
+			{float64(x), float64(y), float64(z) + 1.0, avgOcc[0]},
+			{float64(x), float64(y) + 1.0, float64(z) + 1.0, avgOcc[0]},
+			{float64(x), float64(y) + 1.0, float64(z), avgOcc[0]},
 		}
 
 	case RIGHT:
-		vertices = [4]vector.Vector3f{
-			{float64(x) + 1.0, float64(y) + 1.0, float64(z) + 1.0},
-			{float64(x) + 1.0, float64(y), float64(z) + 1.0},
-			{float64(x) + 1.0, float64(y), float64(z)},
-			{float64(x) + 1.0, float64(y) + 1.0, float64(z)},
+		avgOcc := [4]float64{
+			(occFactor[RIGHT] + occFactor[FRONT] + occFactor[TOP]) / 3.0,
+			(occFactor[RIGHT] + occFactor[FRONT] + occFactor[BOTTOM]) / 3.0,
+			(occFactor[RIGHT] + occFactor[BACK] + occFactor[BOTTOM]) / 3.0,
+			(occFactor[RIGHT] + occFactor[BACK] + occFactor[TOP]) / 3.0,
+		}
+		vertices = [4]vector.Vector4f{
+			{float64(x) + 1.0, float64(y) + 1.0, float64(z) + 1.0, avgOcc[0]},
+			{float64(x) + 1.0, float64(y), float64(z) + 1.0, avgOcc[0]},
+			{float64(x) + 1.0, float64(y), float64(z), avgOcc[0]},
+			{float64(x) + 1.0, float64(y) + 1.0, float64(z), avgOcc[0]},
 		}
 
 	case TOP:
-		vertices = [4]vector.Vector3f{
-			{float64(x) + 1.0, float64(y) + 1.0, float64(z) + 1.0},
-			{float64(x) + 1.0, float64(y) + 1.0, float64(z)},
-			{float64(x), float64(y) + 1.0, float64(z)},
-			{float64(x), float64(y) + 1.0, float64(z) + 1.0},
+		avgOcc := [4]float64{
+			(occFactor[TOP] + occFactor[RIGHT] + occFactor[FRONT]) / 3.0,
+			(occFactor[TOP] + occFactor[RIGHT] + occFactor[BACK]) / 3.0,
+			(occFactor[TOP] + occFactor[LEFT] + occFactor[BACK]) / 3.0,
+			(occFactor[TOP] + occFactor[LEFT] + occFactor[FRONT]) / 3.0,
+		}
+		vertices = [4]vector.Vector4f{
+			{float64(x) + 1.0, float64(y) + 1.0, float64(z) + 1.0, avgOcc[0]},
+			{float64(x) + 1.0, float64(y) + 1.0, float64(z), avgOcc[0]},
+			{float64(x), float64(y) + 1.0, float64(z), avgOcc[0]},
+			{float64(x), float64(y) + 1.0, float64(z) + 1.0, avgOcc[0]},
 		}
 
 	case BOTTOM:
-		vertices = [4]vector.Vector3f{
-			{float64(x), float64(y), float64(z)},
-			{float64(x) + 1.0, float64(y), float64(z)},
-			{float64(x) + 1.0, float64(y), float64(z) + 1.0},
-			{float64(x), float64(y), float64(z) + 1.0},
+		avgOcc := [4]float64{
+			(occFactor[BOTTOM] + occFactor[LEFT] + occFactor[BACK]) / 3.0,
+			(occFactor[BOTTOM] + occFactor[RIGHT] + occFactor[BACK]) / 3.0,
+			(occFactor[BOTTOM] + occFactor[RIGHT] + occFactor[FRONT]) / 3.0,
+			(occFactor[BOTTOM] + occFactor[LEFT] + occFactor[FRONT]) / 3.0,
+		}
+		vertices = [4]vector.Vector4f{
+			{float64(x), float64(y), float64(z), avgOcc[0]},
+			{float64(x) + 1.0, float64(y), float64(z), avgOcc[0]},
+			{float64(x) + 1.0, float64(y), float64(z) + 1.0, avgOcc[0]},
+			{float64(x), float64(y), float64(z) + 1.0, avgOcc[0]},
 		}
 
 	default:
@@ -95,7 +131,7 @@ func appendChunkFace(faceBuffer *[]float32, indexBuffer *[]uint32, occBuffer *[]
 	vertIds := [4]uint32{}
 	for index, vertex := range vertices {
 		(*faceBuffer) = append((*faceBuffer), float32(vertex.X), float32(vertex.Y), float32(vertex.Z))
-		(*occBuffer) = append((*occBuffer), occFactor)
+		(*occBuffer) = append((*occBuffer), float32(vertex.W))
 		vertIds[index] = uint32((len((*faceBuffer)) - 3) / 3)
 	}
 
@@ -156,8 +192,7 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 
 			if !skip {
 				sides++
-				occFactor := float32(chunk.data[pos].occlusion[FRONT])
-				appendChunkFace(&vertexBuffers[FRONT], &indexBuffers[FRONT], &occBuffers[FRONT], occFactor, x, y, z, FRONT)
+				appendChunkFace(&vertexBuffers[FRONT], &indexBuffers[FRONT], &occBuffers[FRONT], chunk.data[pos].occlusion, x, y, z, FRONT)
 			}
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y, pos.Z - 1}]; !ok {
@@ -170,8 +205,7 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 
 			if !skip {
 				sides++
-				occFactor := float32(chunk.data[pos].occlusion[BACK])
-				appendChunkFace(&vertexBuffers[BACK], &indexBuffers[BACK], &occBuffers[BACK], occFactor, x, y, z, BACK)
+				appendChunkFace(&vertexBuffers[BACK], &indexBuffers[BACK], &occBuffers[BACK], chunk.data[pos].occlusion, x, y, z, BACK)
 			}
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X - 1, pos.Y, pos.Z}]; !ok {
@@ -184,8 +218,7 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 
 			if !skip {
 				sides++
-				occFactor := float32(chunk.data[pos].occlusion[LEFT])
-				appendChunkFace(&vertexBuffers[LEFT], &indexBuffers[LEFT], &occBuffers[LEFT], occFactor, x, y, z, LEFT)
+				appendChunkFace(&vertexBuffers[LEFT], &indexBuffers[LEFT], &occBuffers[LEFT], chunk.data[pos].occlusion, x, y, z, LEFT)
 			}
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X + 1, pos.Y, pos.Z}]; !ok {
@@ -198,8 +231,7 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 
 			if !skip {
 				sides++
-				occFactor := float32(chunk.data[pos].occlusion[RIGHT])
-				appendChunkFace(&vertexBuffers[RIGHT], &indexBuffers[RIGHT], &occBuffers[RIGHT], occFactor, x, y, z, RIGHT)
+				appendChunkFace(&vertexBuffers[RIGHT], &indexBuffers[RIGHT], &occBuffers[RIGHT], chunk.data[pos].occlusion, x, y, z, RIGHT)
 			}
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y + 1, pos.Z}]; !ok {
@@ -212,8 +244,7 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 
 			if !skip {
 				sides++
-				occFactor := float32(chunk.data[pos].occlusion[TOP])
-				appendChunkFace(&vertexBuffers[TOP], &indexBuffers[TOP], &occBuffers[TOP], occFactor, x, y, z, TOP)
+				appendChunkFace(&vertexBuffers[TOP], &indexBuffers[TOP], &occBuffers[TOP], chunk.data[pos].occlusion, x, y, z, TOP)
 			}
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y - 1, pos.Z}]; !ok {
@@ -226,8 +257,7 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 
 			if !skip {
 				sides++
-				occFactor := float32(chunk.data[pos].occlusion[BOTTOM])
-				appendChunkFace(&vertexBuffers[BOTTOM], &indexBuffers[BOTTOM], &occBuffers[BOTTOM], occFactor, x, y, z, BOTTOM)
+				appendChunkFace(&vertexBuffers[BOTTOM], &indexBuffers[BOTTOM], &occBuffers[BOTTOM], chunk.data[pos].occlusion, x, y, z, BOTTOM)
 			}
 		}
 
