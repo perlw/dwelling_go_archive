@@ -191,8 +191,22 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 			}
 
 			if !skip {
+				occFactor := chunk.data[pos].occlusion
+				if neighbor, ok := chunk.data[BlockCoord{pos.X, pos.Y + 1, pos.Z}]; ok {
+					occFactor[TOP] = neighbor.occlusion[FRONT]
+				}
+				if neighbor, ok := chunk.data[BlockCoord{pos.X, pos.Y - 1, pos.Z}]; ok {
+					occFactor[BOTTOM] = neighbor.occlusion[FRONT]
+				}
+				if neighbor, ok := chunk.data[BlockCoord{pos.X - 1, pos.Y, pos.Z}]; ok {
+					occFactor[LEFT] = neighbor.occlusion[FRONT]
+				}
+				if neighbor, ok := chunk.data[BlockCoord{pos.X + 1, pos.Y, pos.Z}]; ok {
+					occFactor[RIGHT] = neighbor.occlusion[FRONT]
+				}
+
 				sides++
-				appendChunkFace(&vertexBuffers[FRONT], &indexBuffers[FRONT], &occBuffers[FRONT], chunk.data[pos].occlusion, x, y, z, FRONT)
+				appendChunkFace(&vertexBuffers[FRONT], &indexBuffers[FRONT], &occBuffers[FRONT], occFactor, x, y, z, FRONT)
 			}
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y, pos.Z - 1}]; !ok {
@@ -204,8 +218,22 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 			}
 
 			if !skip {
+				occFactor := chunk.data[pos].occlusion
+				if neighbor, ok := chunk.data[BlockCoord{pos.X, pos.Y + 1, pos.Z}]; ok {
+					occFactor[TOP] = neighbor.occlusion[BACK]
+				}
+				if neighbor, ok := chunk.data[BlockCoord{pos.X, pos.Y - 1, pos.Z}]; ok {
+					occFactor[BOTTOM] = neighbor.occlusion[BACK]
+				}
+				if neighbor, ok := chunk.data[BlockCoord{pos.X - 1, pos.Y, pos.Z}]; ok {
+					occFactor[LEFT] = neighbor.occlusion[BACK]
+				}
+				if neighbor, ok := chunk.data[BlockCoord{pos.X + 1, pos.Y, pos.Z}]; ok {
+					occFactor[RIGHT] = neighbor.occlusion[BACK]
+				}
+
 				sides++
-				appendChunkFace(&vertexBuffers[BACK], &indexBuffers[BACK], &occBuffers[BACK], chunk.data[pos].occlusion, x, y, z, BACK)
+				appendChunkFace(&vertexBuffers[BACK], &indexBuffers[BACK], &occBuffers[BACK], occFactor, x, y, z, BACK)
 			}
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X - 1, pos.Y, pos.Z}]; !ok {
@@ -217,8 +245,22 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 			}
 
 			if !skip {
+				occFactor := chunk.data[pos].occlusion
+				if neighbor, ok := chunk.data[BlockCoord{pos.X, pos.Y + 1, pos.Z}]; ok {
+					occFactor[TOP] = neighbor.occlusion[LEFT]
+				}
+				if neighbor, ok := chunk.data[BlockCoord{pos.X, pos.Y - 1, pos.Z}]; ok {
+					occFactor[BOTTOM] = neighbor.occlusion[LEFT]
+				}
+				if neighbor, ok := chunk.data[BlockCoord{pos.X, pos.Y, pos.Z - 1}]; ok {
+					occFactor[BACK] = neighbor.occlusion[LEFT]
+				}
+				if neighbor, ok := chunk.data[BlockCoord{pos.X, pos.Y, pos.Z + 1}]; ok {
+					occFactor[FRONT] = neighbor.occlusion[LEFT]
+				}
+
 				sides++
-				appendChunkFace(&vertexBuffers[LEFT], &indexBuffers[LEFT], &occBuffers[LEFT], chunk.data[pos].occlusion, x, y, z, LEFT)
+				appendChunkFace(&vertexBuffers[LEFT], &indexBuffers[LEFT], &occBuffers[LEFT], occFactor, x, y, z, LEFT)
 			}
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X + 1, pos.Y, pos.Z}]; !ok {
@@ -230,8 +272,22 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 			}
 
 			if !skip {
+				occFactor := chunk.data[pos].occlusion
+				if neighbor, ok := chunk.data[BlockCoord{pos.X, pos.Y + 1, pos.Z}]; ok {
+					occFactor[TOP] = neighbor.occlusion[RIGHT]
+				}
+				if neighbor, ok := chunk.data[BlockCoord{pos.X, pos.Y - 1, pos.Z}]; ok {
+					occFactor[BOTTOM] = neighbor.occlusion[RIGHT]
+				}
+				if neighbor, ok := chunk.data[BlockCoord{pos.X, pos.Y, pos.Z - 1}]; ok {
+					occFactor[BACK] = neighbor.occlusion[RIGHT]
+				}
+				if neighbor, ok := chunk.data[BlockCoord{pos.X, pos.Y, pos.Z + 1}]; ok {
+					occFactor[FRONT] = neighbor.occlusion[RIGHT]
+				}
+
 				sides++
-				appendChunkFace(&vertexBuffers[RIGHT], &indexBuffers[RIGHT], &occBuffers[RIGHT], chunk.data[pos].occlusion, x, y, z, RIGHT)
+				appendChunkFace(&vertexBuffers[RIGHT], &indexBuffers[RIGHT], &occBuffers[RIGHT], occFactor, x, y, z, RIGHT)
 			}
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y + 1, pos.Z}]; !ok {
@@ -243,8 +299,22 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 			}
 
 			if !skip {
+				occFactor := chunk.data[pos].occlusion
+				if neighbor, ok := chunk.data[BlockCoord{pos.X, pos.Y, pos.Z + 1}]; ok {
+					occFactor[FRONT] = neighbor.occlusion[TOP]
+				}
+				if neighbor, ok := chunk.data[BlockCoord{pos.X, pos.Y, pos.Z - 1}]; ok {
+					occFactor[BACK] = neighbor.occlusion[TOP]
+				}
+				if neighbor, ok := chunk.data[BlockCoord{pos.X - 1, pos.Y, pos.Z}]; ok {
+					occFactor[LEFT] = neighbor.occlusion[TOP]
+				}
+				if neighbor, ok := chunk.data[BlockCoord{pos.X + 1, pos.Y, pos.Z}]; ok {
+					occFactor[RIGHT] = neighbor.occlusion[TOP]
+				}
+
 				sides++
-				appendChunkFace(&vertexBuffers[TOP], &indexBuffers[TOP], &occBuffers[TOP], chunk.data[pos].occlusion, x, y, z, TOP)
+				appendChunkFace(&vertexBuffers[TOP], &indexBuffers[TOP], &occBuffers[TOP], occFactor, x, y, z, TOP)
 			}
 		}
 		if _, ok := chunk.data[BlockCoord{pos.X, pos.Y - 1, pos.Z}]; !ok {
@@ -256,8 +326,22 @@ func (chunk *Chunk) CreateVertexData(rebuildCh chan<- RebuildData) {
 			}
 
 			if !skip {
+				occFactor := chunk.data[pos].occlusion
+				if neighbor, ok := chunk.data[BlockCoord{pos.X, pos.Y, pos.Z + 1}]; ok {
+					occFactor[FRONT] = neighbor.occlusion[TOP]
+				}
+				if neighbor, ok := chunk.data[BlockCoord{pos.X, pos.Y, pos.Z - 1}]; ok {
+					occFactor[BACK] = neighbor.occlusion[TOP]
+				}
+				if neighbor, ok := chunk.data[BlockCoord{pos.X - 1, pos.Y, pos.Z}]; ok {
+					occFactor[LEFT] = neighbor.occlusion[TOP]
+				}
+				if neighbor, ok := chunk.data[BlockCoord{pos.X + 1, pos.Y, pos.Z}]; ok {
+					occFactor[RIGHT] = neighbor.occlusion[TOP]
+				}
+
 				sides++
-				appendChunkFace(&vertexBuffers[BOTTOM], &indexBuffers[BOTTOM], &occBuffers[BOTTOM], chunk.data[pos].occlusion, x, y, z, BOTTOM)
+				appendChunkFace(&vertexBuffers[BOTTOM], &indexBuffers[BOTTOM], &occBuffers[BOTTOM], occFactor, x, y, z, BOTTOM)
 			}
 		}
 
