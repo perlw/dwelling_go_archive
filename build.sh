@@ -12,7 +12,7 @@ function build {
 
     echo "Building..."
     cd ${BUILD_DIR}
-    go build ${PRGN_NAME}
+    go build "$@" ${PRGN_NAME}
 
     if [ $? -eq 0 ]; then
         echo "Build OK"
@@ -57,6 +57,8 @@ if [ $# -ne 0 ]; then
     do
         if [ $i = "build" ]; then
             build
+        elif [ $i = "build_race" ]; then
+            build "-race"
         elif [ $i = "run" ]; then
             run
         else
