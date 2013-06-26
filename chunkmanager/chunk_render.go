@@ -1,9 +1,9 @@
 package chunkmanager
 
 import (
+	"bedrock/shader"
 	"dwelling/math/matrix"
 	"dwelling/math/vector"
-	"dwelling/shader"
 	"fmt"
 	gl "github.com/chsc/gogl/gl33"
 	"unsafe"

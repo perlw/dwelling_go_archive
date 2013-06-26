@@ -1,9 +1,9 @@
 package chunkmanager
 
 import (
+	"bedrock/shader"
 	"dwelling/camera"
 	"dwelling/math/matrix"
-	"dwelling/shader"
 )
 
 var chunkShader *shader.ShaderProgram

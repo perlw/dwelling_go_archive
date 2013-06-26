@@ -41,7 +41,7 @@ func main() {
 	go logicLoop(camCh, debugCh, logicCh, exitCh, &cam)
 
 	gl.ClearColor(0.8, 0.8, 0.8, 1.0)
-	currentTick := time.Now().UnixNano() / 1000000.0
+	currentTick := time.Now().UnixNano() / 1e6
 	frameCount := 0
 	debugMode := false
 	running := true
@@ -85,7 +85,7 @@ func main() {
 		glfw.SwapBuffers()
 		frameCount++
 
-		newTick := time.Now().UnixNano() / 1000000.0
+		newTick := time.Now().UnixNano() / 1e6
 		if newTick-currentTick >= 1000.0 {
 			fmt.Printf("FPS: %d\n", frameCount)
 			frameCount = 0
@@ -99,7 +99,7 @@ func main() {
 }
 
 func logicLoop(camCh chan<- bool, debugCh chan<- bool, logicCh chan<- bool, exitCh chan<- bool, cam *camera.Camera) {
-	currentTick := time.Now().UnixNano() / 1000000.0
+	currentTick := time.Now().UnixNano() / 1e6
 
 	rotSpeed := 1.0
 	camSpeed := 0.25
