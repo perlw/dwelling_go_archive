@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bedrock"
 	"dwelling/camera"
 	"dwelling/chunkmanager"
 	"fmt"
@@ -18,35 +19,10 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	fmt.Printf("Using %d cpus for concurrency\n", runtime.NumCPU())
 
-	if err := glfw.Init(); err != nil {
-		fmt.Printf("glfw: %s\n", err)
+	if err := bedrock.Init(); err != nil {
+		fmt.Println(err)
 		return
 	}
-	defer glfw.Terminate()
-
-	glfw.OpenWindowHint(glfw.OpenGLVersionMajor, 3)
-	glfw.OpenWindowHint(glfw.OpenGLVersionMinor, 0)
-	glfw.OpenWindowHint(glfw.WindowNoResize, 1)
-
-	if err := glfw.OpenWindow(640, 480, 8, 8, 8, 8, 16, 0, glfw.Windowed); err != nil {
-		fmt.Printf("glfw: %s\n", err)
-		return
-	}
-	defer glfw.CloseWindow()
-
-	glfw.SetSwapInterval(0)
-	glfw.SetWindowTitle("Dwelling")
-
-	if err := gl.Init(); err != nil {
-		fmt.Printf("gl: %s\n", err)
-	}
-
-	gl.Enable(gl.CULL_FACE)
-	gl.Enable(gl.DEPTH_TEST)
-	gl.ClearColor(0.5, 0.5, 0.5, 1.0)
-	gl.ClearDepth(1)
-	gl.DepthFunc(gl.LEQUAL)
-	gl.Viewport(0, 0, 640, 480)
 
 	if err := cam.Init(); err != nil {
 		fmt.Println(err)
@@ -118,6 +94,8 @@ func main() {
 
 		runtime.Gosched()
 	}
+
+	bedrock.Cleanup()
 }
 
 func logicLoop(camCh chan<- bool, debugCh chan<- bool, logicCh chan<- bool, exitCh chan<- bool, cam *camera.Camera) {
