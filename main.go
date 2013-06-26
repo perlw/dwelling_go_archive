@@ -109,7 +109,7 @@ func logicLoop(camCh chan<- bool, debugCh chan<- bool, logicCh chan<- bool, exit
 
 	remainder := 0.0
 	for {
-		newTick := time.Now().UnixNano() / 1000000.0
+		newTick := time.Now().UnixNano() / 1e6
 		elapsedTick := float64(newTick-currentTick) + remainder
 		if elapsedTick >= 16.0 {
 			update := false
