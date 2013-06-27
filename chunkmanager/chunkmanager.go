@@ -1,9 +1,9 @@
 package chunkmanager
 
 import (
+	"bedrock/math/matrix"
+	"bedrock/math/vector"
 	"dwelling/camera"
-	"dwelling/math/matrix"
-	"dwelling/math/vector"
 	"fmt"
 	"math"
 	"math/rand"

@@ -1,8 +1,8 @@
 package camera
 
 import (
-	"dwelling/math/matrix"
-	"dwelling/math/vector"
+	"bedrock/math/matrix"
+	"bedrock/math/vector"
 	"math"
 )
 

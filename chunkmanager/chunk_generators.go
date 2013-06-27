@@ -1,7 +1,7 @@
 package chunkmanager
 
 import (
-	"dwelling/math/simplex"
+	"bedrock/math/simplex"
 	"math"
 	"math/rand"
 )
