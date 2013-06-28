@@ -1,6 +1,7 @@
 package camera
 
 import (
+	"bedrock"
 	"bedrock/math/matrix"
 	"bedrock/math/vector"
 	"math"
@@ -26,9 +27,11 @@ type Plane struct {
 }
 
 func (cam *Camera) Init() error {
+	ratio := float64(bedrock.ScreenWidth) / float64(bedrock.ScreenHeight)
+
 	cam.Pos = vector.Vector3f{X: -48.0, Y: 32.0, Z: -48.0}
 	cam.Rot = vector.Vector3f{X: 0.0, Y: 135, Z: 0.0}
-	cam.ProjectionMatrix = matrix.NewPerspectiveMatrix(53.13, 640.0/480.0, 1.0, 1000.0)
+	cam.ProjectionMatrix = matrix.NewPerspectiveMatrix(53.13, ratio, 1.0, 1000.0)
 	cam.FrustumPos = cam.Pos
 	cam.FrustumRot = cam.Rot
 	cam.CullPos = cam.Pos

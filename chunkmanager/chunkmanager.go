@@ -1,6 +1,7 @@
 package chunkmanager
 
 import (
+	"bedrock"
 	"bedrock/math/matrix"
 	"bedrock/math/vector"
 	"dwelling/camera"
@@ -339,8 +340,10 @@ func PointInBox(point, boxPos vector.Vector3f, boxSize float64) bool {
 // TODO: Optmise chunk lookup by adding checked chunks to map copy and check against to avoid double and triple checking
 // TODO: Rename func
 func ClickedInChunk(mx, my int, cam *camera.Camera) {
-	mouseNear, _ := matrix.Unproject(vector.Vector3f{float64(mx), float64(480 - my), 0.0}, cam.ViewMatrix, cam.ProjectionMatrix, 640, 480)
-	mouseFar, _ := matrix.Unproject(vector.Vector3f{float64(mx), float64(480 - my), 1.0}, cam.ViewMatrix, cam.ProjectionMatrix, 640, 480)
+	sWidth := bedrock.ScreenWidth
+	sHeight := bedrock.ScreenHeight
+	mouseNear, _ := matrix.Unproject(vector.Vector3f{float64(mx), float64(sHeight - my), 0.0}, cam.ViewMatrix, cam.ProjectionMatrix, sWidth, sHeight)
+	mouseFar, _ := matrix.Unproject(vector.Vector3f{float64(mx), float64(sHeight - my), 1.0}, cam.ViewMatrix, cam.ProjectionMatrix, sWidth, sHeight)
 	cam.MousePos = cam.Pos
 	cam.MouseDir = mouseFar.Sub(mouseNear).Normalize()
 
